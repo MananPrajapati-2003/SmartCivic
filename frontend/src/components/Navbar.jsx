@@ -6,6 +6,8 @@ import StaggeredMenu from "./background/StaggeredMenu";
 import { Button } from "./ui/Button";
 import { useAuth } from "../context/AuthContext";
 
+export const BASE_URL = "http://localhost:8000";
+
 export const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -23,6 +25,8 @@ export const Navbar = () => {
     await logout();
     navigate("/");
   };
+
+ 
 
   /* Role badge style helper */
   const roleBadgeColor = (role) => {
@@ -81,9 +85,9 @@ export const Navbar = () => {
                 <div className="flex items-center gap-2.5">
                   {user.profile_image ? (
                     <img
-                      src={`/media/${user.profile_image}`}
+                      src={user.profile_image}
                       alt={user.full_name}
-                      className="w-8 h-8 rounded-full object-cover border border-cyan-400/40"
+                      className="w-10 h-10 rounded-full object-cover border border-cyan-400"
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-linear-to-br from-cyan-500 to-purple-600 flex items-center justify-center border border-cyan-400/30">
@@ -99,6 +103,16 @@ export const Navbar = () => {
                     </p>
                   </div>
                 </div>
+
+                {/* Admin Panel link for super_admin */}
+                {(user.role === "super_admin" || user.is_staff) && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 text-xs font-semibold transition-colors"
+                  >
+                    <ShieldAlert size={13} /> Admin
+                  </Link>
+                )}
 
                 {/* Logout */}
                 <button

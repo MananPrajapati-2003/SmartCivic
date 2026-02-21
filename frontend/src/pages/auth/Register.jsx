@@ -29,8 +29,8 @@ const Register = () => {
     profile_image: null,
   });
   const [errors, setErrors] = useState({});
-  const [success, setSuccess] = useState(false);
-  const { register, loading } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   /* Client-side validation */
@@ -54,8 +54,9 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+    setSubmitting(true);
+    setErrors({});
 
-    // Build FormData for multipart upload (supports profile_image)
     const formData = new FormData();
     formData.append("full_name", form.full_name.trim());
     formData.append("email", form.email.trim().toLowerCase());
@@ -64,37 +65,21 @@ const Register = () => {
     if (form.mobile_number) formData.append("mobile_number", form.mobile_number);
     if (form.profile_image) formData.append("profile_image", form.profile_image);
 
-    const result = await register(formData);
-
-    if (result.success) {
-      setSuccess(true);
-      setTimeout(() => navigate("/login"), 2200);
-    } else {
-      // Map backend field errors → local errors object
+    try {
+      const result = await register(formData);
+      // Redirect to /verify-email — pass the email so the page knows where to send OTP
+      navigate("/verify-email", { state: { email: form.email.trim().toLowerCase() } });
+    } catch (err) {
+      const data = err?.response?.data || {};
       const apiErrors = {};
-      Object.entries(result.errors || {}).forEach(([key, val]) => {
+      Object.entries(data).forEach(([key, val]) => {
         apiErrors[key] = Array.isArray(val) ? val[0] : String(val);
       });
       setErrors(apiErrors);
+    } finally {
+      setSubmitting(false);
     }
   };
-
-  /* ── Success state ── */
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <motion.div
-          initial={{ scale: 0.7, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="text-center px-8"
-        >
-          <CheckCircle className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Registration Successful!</h2>
-          <p className="text-slate-400">Redirecting you to login…</p>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black px-4 py-12">
@@ -179,13 +164,13 @@ const Register = () => {
           />
 
           <motion.button
-            whileHover={{ scale: loading ? 1 : 1.02 }}
-            whileTap={{ scale: loading ? 1 : 0.98 }}
+            whileHover={{ scale: submitting ? 1 : 1.02 }}
+            whileTap={{ scale: submitting ? 1 : 0.98 }}
             type="submit"
-            disabled={loading}
+            disabled={submitting}
             className="w-full mt-4 py-3 rounded-xl font-semibold bg-linear-to-r from-pink-500 via-violet-500 to-indigo-500 text-white shadow-lg disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            {loading ? (
+            {submitting ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
                 Creating account…

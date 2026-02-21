@@ -8,13 +8,15 @@ export default defineConfig({
     proxy: {
       // Forward all /api requests to the Django backend
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        target: 'http://localhost:8000',
         changeOrigin: true,
+        secure: false,
       },
       // Forward media file requests to Django
       '/media': {
-        target: 'http://127.0.0.1:8000',
+        target: 'http://localhost:8000',
         changeOrigin: true,
+        secure: false,
       },
     },
   },

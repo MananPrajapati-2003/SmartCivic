@@ -127,3 +127,19 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
 }
+
+# ─── Email (Gmail SMTP) ───────────────────────────────────────────────────────
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "smart.civicissue@gmail.com")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = f"SmartCivic <{os.getenv('EMAIL_HOST_USER', 'smart.civicissue@gmail.com')}>"
+
+# ─── Frontend URL (for password reset links) ─────────────────────────────────
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+# ─── Fast2SMS (India SMS OTP) ────────────────────────────────────────────────
+FAST2SMS_API_KEY = os.getenv("FAST2SMS_API_KEY", "")
+

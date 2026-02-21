@@ -4,22 +4,16 @@ from .models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Read-only serializer for returning user data in responses."""
+    """Read-only serializer — returned in all auth responses."""
 
     profile_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
-            "id",
-            "email",
-            "full_name",
-            "mobile_number",
-            "role",
-            "civic_score",
-            "profile_image",
-            "profile_image_url",
-            "date_joined",
+            "id", "email", "full_name", "mobile_number", "role",
+            "civic_score", "profile_image", "profile_image_url",
+            "is_email_verified", "is_mobile_verified", "date_joined",
         ]
         read_only_fields = fields
 
@@ -32,29 +26,14 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    """Serializer for citizen self-registration."""
+    """Public citizen self-registration serializer."""
 
-    password = serializers.CharField(
-        write_only=True,
-        min_length=6,
-        style={"input_type": "password"},
-        error_messages={"min_length": "Password must be at least 6 characters."},
-    )
-    confirm_password = serializers.CharField(
-        write_only=True,
-        style={"input_type": "password"},
-    )
+    password = serializers.CharField(write_only=True, min_length=6, style={"input_type": "password"})
+    confirm_password = serializers.CharField(write_only=True, style={"input_type": "password"})
 
     class Meta:
         model = User
-        fields = [
-            "email",
-            "full_name",
-            "mobile_number",
-            "password",
-            "confirm_password",
-            "profile_image",
-        ]
+        fields = ["email", "full_name", "mobile_number", "password", "confirm_password", "profile_image"]
         extra_kwargs = {
             "profile_image": {"required": False, "allow_null": True},
             "mobile_number": {"required": False, "allow_blank": True},
@@ -79,8 +58,9 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         profile_image = validated_data.pop("profile_image", None)
-        # Citizens always get citizen role on self-registration
         validated_data["role"] = User.ROLE_CITIZEN
+        validated_data["is_email_verified"] = False
+        validated_data["is_mobile_verified"] = False
         user = User.objects.create_user(**validated_data)
         if profile_image:
             user.profile_image = profile_image
@@ -89,8 +69,6 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    """Serializer for email + password login."""
-
     email = serializers.EmailField()
     password = serializers.CharField(style={"input_type": "password"})
 
@@ -99,26 +77,65 @@ class LoginSerializer(serializers.Serializer):
         password = data.get("password", "")
         user = authenticate(username=email, password=password)
         if not user:
-            raise serializers.ValidationError(
-                {"detail": "Invalid email or password. Please try again."}
-            )
+            raise serializers.ValidationError({"detail": "Invalid email or password."})
         if not user.is_active:
-            raise serializers.ValidationError(
-                {"detail": "Your account has been deactivated. Contact support."}
-            )
+            raise serializers.ValidationError({"detail": "Your account has been deactivated."})
         data["user"] = user
         return data
 
 
-class ChangePasswordSerializer(serializers.Serializer):
-    """Serializer for changing own password."""
+# ─── OTP Serializers ──────────────────────────────────────────────────────────
 
+class VerifyOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(min_length=6, max_length=6)
+
+    def validate_otp(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError("OTP must contain only digits.")
+        return value
+
+
+class ResendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp_type = serializers.ChoiceField(choices=["email", "mobile"])
+
+
+class SendMobileOTPSerializer(serializers.Serializer):
+    """Triggers sending an OTP to the authenticated user's mobile number."""
+    pass  # No extra fields — user comes from request
+
+
+class VerifyMobileOTPSerializer(serializers.Serializer):
+    otp = serializers.CharField(min_length=6, max_length=6)
+
+    def validate_otp(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError("OTP must contain only digits.")
+        return value
+
+
+# ─── Password Reset Serializers ───────────────────────────────────────────────
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(min_length=6, style={"input_type": "password"})
+    confirm_password = serializers.CharField(style={"input_type": "password"})
+
+    def validate(self, data):
+        if data["new_password"] != data["confirm_password"]:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+        return data
+
+
+class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(style={"input_type": "password"})
-    new_password = serializers.CharField(
-        min_length=6,
-        style={"input_type": "password"},
-        error_messages={"min_length": "New password must be at least 6 characters."},
-    )
+    new_password = serializers.CharField(min_length=6, style={"input_type": "password"})
     confirm_new_password = serializers.CharField(style={"input_type": "password"})
 
     def validate(self, data):
