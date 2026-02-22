@@ -15,8 +15,8 @@ export const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Redirect back to the page the user was trying to visit
-  const from = location.state?.from?.pathname || "/";
+  // Redirect to role-appropriate dashboard after login
+  const from = location.state?.from?.pathname || "/me";
 
   const validate = () => {
     const e = {};

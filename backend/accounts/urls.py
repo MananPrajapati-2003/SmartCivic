@@ -28,8 +28,16 @@ urlpatterns = [
     # ── JWT Token Refresh ─────────────────────────────────────────────────────
     path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
 
-    # ── Admin API (super_admin only) ──────────────────────────────────────────
+    # ── Admin: Stats & User Management ────────────────────────────────────────
     path("admin/stats/", admin_views.AdminStatsView.as_view(), name="admin-stats"),
     path("admin/users/", admin_views.AdminUserListView.as_view(), name="admin-users"),
     path("admin/users/<int:pk>/", admin_views.AdminUserDetailView.as_view(), name="admin-user-detail"),
+
+    # ── Admin: NGO Approvals ──────────────────────────────────────────────────
+    path("admin/ngo/", admin_views.AdminNGOListView.as_view(), name="admin-ngo-list"),
+    path("admin/ngo/<int:pk>/action/", admin_views.AdminNGOActionView.as_view(), name="admin-ngo-action"),
+
+    # ── Admin: Account Creation ───────────────────────────────────────────────
+    path("admin/create-authority/", admin_views.AdminCreateAuthorityView.as_view(), name="admin-create-authority"),
+    path("admin/create-admin/", admin_views.AdminCreateAdminView.as_view(), name="admin-create-admin"),
 ]

@@ -12,12 +12,16 @@ from django.conf import settings
 
 from .models import User, OTPVerification
 from .serializers import (
-    RegisterSerializer, LoginSerializer, UserSerializer,
+    CitizenRegisterSerializer, NGORegisterSerializer, LoginSerializer, UserSerializer,
     VerifyOTPSerializer, ResendOTPSerializer,
     SendMobileOTPSerializer, VerifyMobileOTPSerializer,
     ForgotPasswordSerializer, ResetPasswordSerializer, ChangePasswordSerializer,
 )
-from .email_service import send_welcome_and_email_otp, send_email_otp, send_mobile_otp_email, send_password_reset_email
+from .email_service import (
+    send_welcome_and_email_otp, send_email_otp,
+    send_mobile_otp_email, send_password_reset_email,
+    send_ngo_pending_email,
+)
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -32,33 +36,51 @@ def get_tokens_for_user(user):
 class RegisterView(APIView):
     """
     POST /api/auth/register/
-    Creates a citizen account, sends a welcome + email OTP,
-    and redirects the user to the email verification step.
+    Accepts { role: 'citizen' | 'ngo_csr', ...fields }
+    Citizen → creates active user, sends OTP, redirects to verify-email.
+    NGO/CSR  → creates inactive user + NGOProfile, sends pending email.
     """
     permission_classes = [AllowAny]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request):
-        serializer = RegisterSerializer(data=request.data, context={"request": request})
-        if serializer.is_valid():
-            user = serializer.save()
+        role = request.data.get("role", "citizen")
 
-            # Generate and send email OTP
-            otp_obj = OTPVerification.generate_otp(user, OTPVerification.TYPE_EMAIL)
-            email_sent = send_welcome_and_email_otp(user, otp_obj.otp)
+        if role == User.ROLE_NGO_CSR:
+            serializer = NGORegisterSerializer(data=request.data)
+            if serializer.is_valid():
+                user = serializer.save()
+                send_ngo_pending_email(user, user.ngo_profile.org_name)
+                return Response(
+                    {
+                        "message": "NGO registration submitted. Our team will review your application and notify you by email.",
+                        "type": "ngo_pending",
+                        "org_name": user.ngo_profile.org_name,
+                        "email": user.email,
+                    },
+                    status=status.HTTP_201_CREATED,
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                {
-                    "message": "Registration successful. Please check your email for the OTP to verify your account.",
-                    "email": user.email,
-                    "email_sent": email_sent,
-                    "requires_email_verification": True,
-                    # Only expose OTP in DEBUG mode for testing
-                    **({"dev_otp": otp_obj.otp} if settings.DEBUG else {}),
-                },
-                status=status.HTTP_201_CREATED,
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # Default: citizen
+            serializer = CitizenRegisterSerializer(data=request.data, context={"request": request})
+            if serializer.is_valid():
+                user = serializer.save()
+                otp_obj = OTPVerification.generate_otp(user, OTPVerification.TYPE_EMAIL)
+                email_sent = send_welcome_and_email_otp(user, otp_obj.otp)
+                return Response(
+                    {
+                        "message": "Registration successful. Please check your email for the OTP to verify your account.",
+                        "type": "citizen",
+                        "email": user.email,
+                        "email_sent": email_sent,
+                        "requires_email_verification": True,
+                        **({"dev_otp": otp_obj.otp} if settings.DEBUG else {}),
+                    },
+                    status=status.HTTP_201_CREATED,
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
@@ -74,8 +96,8 @@ class LoginView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data["user"]
 
-            # Block login if email is not verified
-            if not user.is_email_verified:
+            # Block login if email is not verified (citizen only)
+            if not user.is_email_verified and user.role == User.ROLE_CITIZEN:
                 return Response(
                     {
                         "detail": "Please verify your email before logging in.",
@@ -159,7 +181,6 @@ class ResendOTPView(APIView):
     """
     POST /api/auth/resend-otp/
     Accepts { email, otp_type } and resends the OTP.
-    For mobile OTP, requires authentication (user must be logged in).
     """
     permission_classes = [AllowAny]
 
@@ -188,19 +209,6 @@ class ResendOTPView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        if otp_type == OTPVerification.TYPE_MOBILE:
-            if not user.mobile_number:
-                return Response({"detail": "No mobile number on record."}, status=status.HTTP_400_BAD_REQUEST)
-            result = send_mobile_otp(user.mobile_number, otp_obj.otp)
-            return Response(
-                {
-                    "message": "OTP sent to your mobile number.",
-                    **({"dev_otp": otp_obj.otp} if settings.DEBUG else {}),
-                    **({"warning": result.get("warning")} if result.get("warning") else {}),
-                },
-                status=status.HTTP_200_OK,
-            )
-
         return Response({"detail": "Invalid OTP type."}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -224,7 +232,7 @@ class SendMobileOTPView(APIView):
             return Response({"detail": "Mobile number is already verified."}, status=status.HTTP_400_BAD_REQUEST)
 
         otp_obj = OTPVerification.generate_otp(user, OTPVerification.TYPE_MOBILE)
-        email_sent = send_mobile_otp_email(user, otp_obj.otp)
+        send_mobile_otp_email(user, otp_obj.otp)
 
         response_data = {
             "message": f"OTP sent to your email ({user.email}). Enter it to verify your mobile number.",
@@ -301,7 +309,7 @@ class ForgotPasswordView(APIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response(SAFE_MSG, status=status.HTTP_200_OK)  # Don't leak existence
+            return Response(SAFE_MSG, status=status.HTTP_200_OK)
 
         token_generator = PasswordResetTokenGenerator()
         uid = urlsafe_base64_encode(force_bytes(user.pk))

@@ -1,24 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Users, ShieldCheck, Settings,
-  ChevronLeft, ChevronRight, LogOut, Menu, X,
-  Bell, Search, Gauge
+  LayoutDashboard, Users, Settings,
+  ChevronLeft, ChevronRight, LogOut, Menu,
+  Bell, Gauge, Building2, UserPlus,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-
-const navItems = [
-  { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/admin/users", label: "Users", icon: Users },
-  { to: "/admin/settings", label: "Settings", icon: Settings },
-];
+import api from "../../api/axiosInstance";
 
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [ngoPending, setNgoPending] = useState(0);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch pending NGO count for sidebar badge
+  useEffect(() => {
+    api.get("/auth/admin/ngo/?status=pending")
+      .then(r => setNgoPending(r.data?.counts?.pending ?? 0))
+      .catch(() => {});
+  }, []);
+
+  const navItems = [
+    { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
+    { to: "/admin/users", label: "Users", icon: Users },
+    { to: "/admin/ngo-approvals", label: "NGO Approvals", icon: Building2, badge: ngoPending > 0 ? ngoPending : null },
+    { to: "/admin/create-account", label: "Create Account", icon: UserPlus },
+    { to: "/admin/settings", label: "Settings", icon: Settings },
+  ];
 
   const handleLogout = async () => {
     await logout();
@@ -45,7 +56,7 @@ export default function AdminLayout() {
 
       {/* Nav items */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map(({ to, label, icon: Icon, end }) => (
+        {navItems.map(({ to, label, icon: Icon, end, badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -63,7 +74,14 @@ export default function AdminLayout() {
             {({ isActive }) => (
               <>
                 <Icon size={18} className={isActive ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"} />
-                {(!collapsed || mobile) && <span>{label}</span>}
+                {(!collapsed || mobile) && (
+                  <span className="flex-1">{label}</span>
+                )}
+                {(!collapsed || mobile) && badge && (
+                  <span className="ml-auto px-1.5 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-bold min-w-[18px] text-center">
+                    {badge}
+                  </span>
+                )}
               </>
             )}
           </NavLink>
@@ -71,7 +89,7 @@ export default function AdminLayout() {
       </nav>
 
       {/* User + logout */}
-      <div className={`p-3 border-t border-white/8 space-y-2`}>
+      <div className="p-3 border-t border-white/8 space-y-2">
         {(!collapsed || mobile) && (
           <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/5">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -79,7 +97,7 @@ export default function AdminLayout() {
             </div>
             <div className="min-w-0">
               <p className="text-white text-xs font-semibold truncate">{user?.full_name}</p>
-              <p className="text-indigo-400 text-[10px] truncate">{user?.role?.replace("_", " ")}</p>
+              <p className="text-indigo-400 text-[10px] capitalize truncate">{user?.role?.replace("_", " ")}</p>
             </div>
           </div>
         )}
@@ -135,7 +153,7 @@ export default function AdminLayout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <header className="flex items-center gap-4 px-6 py-4 border-b border-white/8 bg-[#060b18]/80 backdrop-blur-xl shrink-0">
+        <header className="flex items-center gap-4 px-5 py-4 border-b border-white/8 bg-[#060b18]/80 backdrop-blur-xl shrink-0">
           <button
             onClick={() => setMobileOpen(true)}
             className="md:hidden text-slate-400 hover:text-white"
@@ -144,6 +162,15 @@ export default function AdminLayout() {
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
+            {/* NGO badge in top bar too */}
+            {ngoPending > 0 && (
+              <button
+                onClick={() => navigate("/admin/ngo-approvals")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-semibold hover:bg-amber-500/25 transition-colors"
+              >
+                <Building2 size={12} /> {ngoPending} Pending NGO{ngoPending !== 1 ? "s" : ""}
+              </button>
+            )}
             <button className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
               <Bell size={16} />
             </button>

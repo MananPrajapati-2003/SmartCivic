@@ -187,6 +187,7 @@ export default function UsersPage() {
             className="bg-transparent text-white text-sm w-full outline-none placeholder-slate-600"
           />
         </div>
+        
 
         <FilterSelect value={filters.role} onChange={e => { setFilters(f => ({ ...f, role: e.target.value })); setPage(1); }}
           options={ROLE_OPTIONS} />

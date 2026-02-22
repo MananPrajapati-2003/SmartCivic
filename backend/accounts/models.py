@@ -93,6 +93,46 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.role == self.ROLE_SUPER_ADMIN
 
 
+class NGOProfile(models.Model):
+    """
+    Extended profile for NGO/CSR users.
+    Created at registration; requires admin approval before user can login.
+    """
+
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending Review"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_REJECTED, "Rejected"),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="ngo_profile")
+    org_name = models.CharField(max_length=200)
+    description = models.TextField(max_length=1000)
+    website = models.URLField(blank=True, default="")        # Optional
+    address = models.CharField(max_length=300)
+    team_size = models.PositiveIntegerField(default=1)
+    approval_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING, db_index=True)
+    rejection_reason = models.TextField(blank=True, default="")
+    reviewed_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="ngo_reviews"
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    registered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "ngo_profiles"
+        verbose_name = "NGO Profile"
+        verbose_name_plural = "NGO Profiles"
+        ordering = ["-registered_at"]
+
+    def __str__(self):
+        return f"{self.org_name} ({self.approval_status})"
+
+
 class OTPVerification(models.Model):
     """
     Stores time-limited OTPs for email verification, mobile verification
@@ -147,3 +187,4 @@ class OTPVerification(models.Model):
             otp_type=otp_type,
             expires_at=expires_at,
         )
+
