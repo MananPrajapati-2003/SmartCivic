@@ -2,6 +2,7 @@ from pathlib import Path
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
+import ssl
 
 load_dotenv()
 
@@ -26,6 +27,7 @@ INSTALLED_APPS = [
     # Local apps
     "accounts",
     "issues",
+    "ai_engine",
 ]
 
 MIDDLEWARE = [
@@ -143,4 +145,28 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 # ─── Fast2SMS (India SMS OTP) ────────────────────────────────────────────────
 FAST2SMS_API_KEY = os.getenv("FAST2SMS_API_KEY", "")
+
+
+# ── Celery (Upstash Serverless Redis — no Docker needed) ─────────────────────
+# Get your free Upstash Redis URL from https://upstash.com
+# Copy the rediss:// URL from your Upstash console
+CELERY_BROKER_URL            = os.getenv("CELERY_BROKER_URL", "")
+CELERY_RESULT_BACKEND        = os.getenv("CELERY_RESULT_BACKEND", "")
+CELERY_BROKER_USE_SSL        = {"ssl_cert_reqs": ssl.CERT_NONE}   # required for rediss://
+CELERY_REDIS_BACKEND_USE_SSL = {"ssl_cert_reqs": ssl.CERT_NONE}
+CELERY_TASK_SERIALIZER       = "json"
+CELERY_RESULT_SERIALIZER     = "json"
+CELERY_ACCEPT_CONTENT        = ["json"]
+CELERY_TASK_TRACK_STARTED    = True
+CELERY_TASK_ALWAYS_EAGER     = os.getenv("CELERY_ALWAYS_EAGER", "False") == "True"
+# ^ set CELERY_ALWAYS_EAGER=True in .env for tests — runs tasks synchronously
+
+
+# ── Hugging Face Spaces (inference API) ───────────────────────────────────────
+# Deploy your trained models as Gradio Spaces on https://huggingface.co/spaces
+# and paste the Space URLs + your HF read token here.
+HF_NLP_API_URL   = os.getenv("HF_NLP_API_URL", "")    # /run/predict_nlp
+HF_IMAGE_API_URL = os.getenv("HF_IMAGE_API_URL", "")  # /run/predict_image
+HF_API_TOKEN     = os.getenv("HF_API_TOKEN", "")      # hf_xxxx (free read token)
+HF_NLP_TOKEN = HF_API_TOKEN  # This maps the expected name to your existing one
 

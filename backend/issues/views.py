@@ -92,6 +92,12 @@ class CitizenIssueListView(APIView):
         for img in images[:5]:  # max 5 images
             IssueImage.objects.create(issue=issue, image=img, uploaded_by=request.user)
 
+        # ── Kick off async AI analysis ─────────────────────────────────────────────────────
+        # Django returns 201 immediately; AI runs in the background.
+        # React polls GET /api/ai/status/<id>/ every 3s for updates.
+        from ai_engine.tasks import analyze_issue
+        analyze_issue.delay(issue.id)
+
         log_action(request.user, "issue_submitted", "CivicIssue", issue.id, issue.title)
         return Response(
             IssueDetailSerializer(issue, context={"request": request}).data,

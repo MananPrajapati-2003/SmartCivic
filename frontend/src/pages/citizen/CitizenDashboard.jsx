@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import api from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
+import { AIAnalysisBadge } from "../../components/AIAnalysisBadge";
 
 const STATUS_CONFIG = {
   pending_verification: { label: "Pending Review", color: "text-amber-400", bg: "bg-amber-500/15 border-amber-500/30", dot: "bg-amber-400" },
@@ -194,6 +195,9 @@ export default function CitizenDashboard() {
                             <span className="text-xs text-slate-600 ml-auto">
                               {new Date(issue.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
                             </span>
+                          </div>
+                          <div onClick={e => e.stopPropagation()}>
+                            <AIAnalysisBadge issueId={issue.id} initialStatus={issue.ai_status} />
                           </div>
                         </div>
                       </div>

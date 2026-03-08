@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import api from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
+import { AIAnalysisBadge } from "../../components/AIAnalysisBadge";
 
 const STATUS_CONFIG = {
   pending_verification: { label: "Pending Review", color: "text-amber-400", bg: "bg-amber-500/15 border-amber-500/30" },
@@ -121,6 +122,12 @@ export default function IssueDetail() {
         <div className="bg-white/3 border border-white/8 rounded-2xl p-4">
           <h2 className="text-white font-semibold mb-2 text-sm">Description</h2>
           <p className="text-slate-400 text-sm leading-relaxed">{issue.description}</p>
+        </div>
+
+        {/* AI Analysis */}
+        <div className="bg-white/3 border border-white/8 rounded-2xl p-4">
+          <h2 className="text-white font-semibold mb-3 text-sm">🤖 AI Analysis</h2>
+          <AIAnalysisBadge issueId={issue.id} initialStatus={issue.ai_status} />
         </div>
 
         {/* Timeline */}

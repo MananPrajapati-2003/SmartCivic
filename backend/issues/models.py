@@ -91,6 +91,27 @@ class CivicIssue(models.Model):
     is_escalated = models.BooleanField(default=False, db_index=True)
     escalated_at = models.DateTimeField(null=True, blank=True)
 
+    # ── AI Analysis ───────────────────────────────────────────────────────────
+    AI_STATUS_PENDING    = "pending"
+    AI_STATUS_PROCESSING = "processing"
+    AI_STATUS_DONE       = "done"
+    AI_STATUS_FAILED     = "failed"
+    AI_STATUS_CHOICES = [
+        (AI_STATUS_PENDING,    "Pending"),
+        (AI_STATUS_PROCESSING, "Processing"),
+        (AI_STATUS_DONE,       "Done"),
+        (AI_STATUS_FAILED,     "Failed"),
+    ]
+    # Polled by React frontend — shows "AI Analysing..." badge
+    ai_status = models.CharField(
+        max_length=20,
+        choices=AI_STATUS_CHOICES,
+        default=AI_STATUS_PENDING,
+        db_index=True,
+    )
+    # Weighted 0–10 score written by Celery task after analysis
+    ai_priority_score = models.FloatField(null=True, blank=True)
+
     # ── Authority verification ─────────────────────────────────────────────────
     verified_by = models.ForeignKey(
         AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,

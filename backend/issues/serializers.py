@@ -118,7 +118,8 @@ class IssueListSerializer(serializers.ModelSerializer):
             "id", "title", "category_name", "category_icon",
             "location_address", "severity", "status", "is_escalated",
             "reporter_name", "reporter_id", "thumbnail",
-            "has_feedback", "created_at", "updated_at"
+            "has_feedback", "ai_status", "ai_priority_score",
+            "created_at", "updated_at"
         ]
 
     def get_thumbnail(self, obj):
@@ -156,6 +157,7 @@ class IssueDetailSerializer(serializers.ModelSerializer):
             "verified_by_name", "verified_at", "rejection_reason",
             "images", "status_updates", "assignment",
             "ngo_assistances", "feedback", "can_submit_feedback",
+            "ai_status", "ai_priority_score",
             "created_at", "updated_at"
         ]
 
