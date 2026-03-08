@@ -17,7 +17,6 @@ from gradio_client import Client, handle_file
 from django.conf import settings
 import os
 
-
 # ── HuggingFace API helpers ───────────────────────────────────────────────────
 
 def _hf_headers() -> dict:
