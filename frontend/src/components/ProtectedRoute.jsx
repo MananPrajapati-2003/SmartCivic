@@ -25,7 +25,7 @@ const ProtectedRoute = ({ children, adminOnly = false, roles = [] }) => {
   }
 
   if (roles.length > 0 && !roles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/me" replace />;
   }
 
   // If children provided (wrapping a single component) return it.

@@ -39,6 +39,7 @@ import UsersPage from "./pages/admin/UsersPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import NGOApprovalsPage from "./pages/admin/NGOApprovalsPage";
 import CreateAccountPage from "./pages/admin/CreateAccountPage";
+import IssuesManagementPage from "./pages/admin/IssuesManagementPage";
 
 /**
  * Smart role-based redirect: sends users to their dashboard after login.
@@ -75,10 +76,12 @@ function App() {
           {/* ── Role redirect after login ─────────────────────────── */}
           <Route path="/me" element={<ProtectedRoute><RoleRedirect /></ProtectedRoute>} />
 
-          {/* ── Citizen dashboard ─────────────────────────────────── */}
-          <Route path="/dashboard" element={<ProtectedRoute><CitizenDashboard /></ProtectedRoute>} />
-          <Route path="/report" element={<ProtectedRoute><SubmitIssue /></ProtectedRoute>} />
-          <Route path="/issue/:id" element={<ProtectedRoute><IssueDetail /></ProtectedRoute>} />
+          {/* ── Citizen (with shared Navbar + Footer) ─────────────── */}
+          <Route element={<Layout />}>
+            <Route path="/dashboard" element={<ProtectedRoute roles={["citizen"]}><CitizenDashboard /></ProtectedRoute>} />
+            <Route path="/report" element={<ProtectedRoute roles={["citizen"]}><SubmitIssue /></ProtectedRoute>} />
+            <Route path="/issue/:id" element={<ProtectedRoute roles={["citizen"]}><IssueDetail /></ProtectedRoute>} />
+          </Route>
 
           {/* ── Authority panel ───────────────────────────────────── */}
           <Route path="/authority" element={<ProtectedRoute><AuthorityLayout /></ProtectedRoute>}>
@@ -96,6 +99,7 @@ function App() {
           {/* ── Admin panel ───────────────────────────────────────── */}
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
+            <Route path="issues" element={<IssuesManagementPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="ngo-approvals" element={<NGOApprovalsPage />} />
             <Route path="create-account" element={<CreateAccountPage />} />

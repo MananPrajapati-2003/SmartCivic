@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, MapPin, Clock, CheckCircle, Star, Camera,
-  AlertTriangle, MessageSquare, Loader2, ChevronDown
+  ArrowLeft, MapPin, Clock, CheckCircle, Star, Loader2
 } from "lucide-react";
 import api from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
@@ -139,7 +138,7 @@ export default function IssueDetail() {
             <div className="relative pl-4">
               <div className="absolute left-1.5 top-0 bottom-0 w-px bg-white/10" />
               <div className="space-y-4">
-                {issue.status_updates.map((u, i) => (
+                {issue.status_updates.map((u) => (
                   <div key={u.id} className="relative">
                     <div className="absolute -left-2.5 top-1 w-2 h-2 rounded-full bg-cyan-500 border-2 border-[#070b14]" />
                     <div className="ml-2">
@@ -159,14 +158,30 @@ export default function IssueDetail() {
           </div>
         )}
 
-        {/* Assignment */}
+        {/* Assignment — citizen-friendly notice */}
         {issue.assignment && (
-          <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4">
-            <h2 className="text-white font-semibold mb-1 text-sm">Assigned Authority</h2>
-            <p className="text-blue-300 text-sm">{issue.assignment.assigned_to_name}</p>
-            <p className="text-slate-500 text-xs mt-0.5">
-              SLA Deadline: {new Date(issue.assignment.sla_deadline).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
-              {issue.assignment.is_overdue && <span className="text-red-400 ml-2 font-semibold">⚠ Overdue</span>}
+          <div className="bg-blue-500/8 border border-blue-500/25 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <CheckCircle size={14} className="text-blue-400" />
+              </div>
+              <h2 className="text-white font-semibold text-sm">Your Issue is Being Handled</h2>
+            </div>
+            <p className="text-slate-300 text-sm">
+              SmartCivic has assigned your issue to{" "}
+              <span className="text-blue-300 font-semibold">{issue.assignment.assigned_to_name}</span>{" "}
+              from our authority team.
+            </p>
+            <p className="text-slate-500 text-xs mt-2">
+              Resolution deadline:{" "}
+              <span className="text-slate-400">
+                {new Date(issue.assignment.sla_deadline).toLocaleDateString("en-IN", {
+                  day: "2-digit", month: "long", year: "numeric"
+                })}
+              </span>
+              {issue.assignment.is_overdue && (
+                <span className="text-red-400 ml-2 font-semibold">⚠ SLA overdue — escalation may occur</span>
+              )}
             </p>
           </div>
         )}

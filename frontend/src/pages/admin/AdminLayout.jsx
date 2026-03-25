@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Users, Settings,
   ChevronLeft, ChevronRight, LogOut, Menu,
-  Bell, Gauge, Building2, UserPlus,
+  Bell, Gauge, Building2, UserPlus, ClipboardList,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axiosInstance";
@@ -24,11 +24,12 @@ export default function AdminLayout() {
   }, []);
 
   const navItems = [
-    { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
-    { to: "/admin/users", label: "Users", icon: Users },
+    { to: "/admin",          label: "Dashboard",    icon: LayoutDashboard, end: true },
+    { to: "/admin/issues",   label: "Issues",       icon: ClipboardList },
+    { to: "/admin/users",    label: "Users",        icon: Users },
     { to: "/admin/ngo-approvals", label: "NGO Approvals", icon: Building2, badge: ngoPending > 0 ? ngoPending : null },
     { to: "/admin/create-account", label: "Create Account", icon: UserPlus },
-    { to: "/admin/settings", label: "Settings", icon: Settings },
+    { to: "/admin/settings", label: "Settings",     icon: Settings },
   ];
 
   const handleLogout = async () => {

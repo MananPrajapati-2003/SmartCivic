@@ -515,9 +515,9 @@ export default function SubmitIssue() {
                   ))}
                 </div>
 
-                {errors.api && (
+                {(errors.api || errors.detail) && (
                   <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
-                    <AlertTriangle size={14} /> {errors.api}
+                    <AlertTriangle size={14} /> {errors.detail || errors.api}
                   </div>
                 )}
               </motion.div>
