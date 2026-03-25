@@ -14,14 +14,19 @@ Rules:
 
 # ── Category → routing group ──────────────────────────────────────────────────
 CATEGORY_GROUP: dict[str, str] = {
-    "Road & Infrastructure": "government",
-    "Sanitation & Waste":    "government",
-    "Water Supply":          "government",
-    "Electricity":           "government",
-    "Public Safety":         "government",
-    "Environment & Trees":   "ngo",
-    "Animal Welfare":        "ngo",
-    "Community & Social":    "ngo",
+    # Must match the candidate_labels in the HuggingFace app.py exactly
+    "Road & Infrastructure":     "government",
+    "Water Supply":               "government",
+    "Sanitation & Garbage":       "government",
+    "Public Safety & Lighting":   "government",
+    "Other":                      "government",
+    # Legacy names (keep for backward compat with old AI results)
+    "Sanitation & Waste":         "government",
+    "Electricity":                "government",
+    "Public Safety":              "government",
+    "Environment & Trees":        "ngo",
+    "Animal Welfare":             "ngo",
+    "Community & Social":         "ngo",
 }
 
 # ── (routing_group, urgency_level) → SLA hours ───────────────────────────────

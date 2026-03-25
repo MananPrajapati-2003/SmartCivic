@@ -111,14 +111,27 @@ class IssueListSerializer(serializers.ModelSerializer):
     reporter_id = serializers.IntegerField(source="reported_by.id", read_only=True)
     thumbnail = serializers.SerializerMethodField()
     has_feedback = serializers.SerializerMethodField()
+    ai_routing = serializers.SerializerMethodField()
+    ai_urgency = serializers.SerializerMethodField()
+    ai_predicted_category = serializers.SerializerMethodField()
+    ai_sla_hours = serializers.SerializerMethodField()
+    assigned_to_name = serializers.SerializerMethodField()
+    sla_deadline = serializers.SerializerMethodField()
+    sla_hours_assigned = serializers.SerializerMethodField()
+    is_overdue = serializers.SerializerMethodField()
+    assigned_note = serializers.SerializerMethodField()
+    assigned_at = serializers.SerializerMethodField()
 
     class Meta:
         model = CivicIssue
         fields = [
             "id", "title", "category_name", "category_icon",
             "location_address", "severity", "status", "is_escalated",
-            "reporter_name", "reporter_id", "thumbnail",
-            "has_feedback", "ai_status", "ai_priority_score",
+            "reporter_name", "reporter_id", "thumbnail", "has_feedback",
+            "ai_status", "ai_priority_score",
+            "ai_routing", "ai_urgency", "ai_predicted_category", "ai_sla_hours",
+            "assigned_to_name", "sla_deadline", "sla_hours_assigned",
+            "is_overdue", "assigned_note", "assigned_at",
             "created_at", "updated_at"
         ]
 
@@ -131,6 +144,64 @@ class IssueListSerializer(serializers.ModelSerializer):
 
     def get_has_feedback(self, obj):
         return hasattr(obj, "feedback")
+
+    def _ai(self, obj):
+        try:
+            return obj.ai_result
+        except Exception:
+            return None
+
+    def get_ai_routing(self, obj):
+        r = self._ai(obj)
+        return r.routing_target if r else None
+
+    def get_ai_urgency(self, obj):
+        r = self._ai(obj)
+        return r.urgency_level if r else None
+
+    def get_ai_predicted_category(self, obj):
+        r = self._ai(obj)
+        return r.predicted_category if r else None
+
+    def get_ai_sla_hours(self, obj):
+        r = self._ai(obj)
+        return r.sla_hours if r else None
+
+    def get_assigned_to_name(self, obj):
+        try:
+            return obj.assignment.assigned_to.full_name
+        except Exception:
+            return None
+
+    def get_sla_deadline(self, obj):
+        try:
+            return obj.assignment.sla_deadline
+        except Exception:
+            return None
+
+    def get_sla_hours_assigned(self, obj):
+        try:
+            return obj.assignment.sla_hours
+        except Exception:
+            return None
+
+    def get_is_overdue(self, obj):
+        try:
+            return obj.assignment.is_overdue
+        except Exception:
+            return False
+
+    def get_assigned_note(self, obj):
+        try:
+            return obj.assignment.note
+        except Exception:
+            return None
+
+    def get_assigned_at(self, obj):
+        try:
+            return obj.assignment.assigned_at
+        except Exception:
+            return None
 
 
 # ─── Issue — Full Detail ──────────────────────────────────────────────────────

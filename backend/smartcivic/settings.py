@@ -64,12 +64,12 @@ WSGI_APPLICATION = "smartcivic.wsgi.application"
 # ─── Database (PostgreSQL) ──────────────────────────────────────────────────
 DATABASES = {
     "default": {
-         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "smartcivic",
-        "USER": "postgres",
-        "PASSWORD": "postgresql123",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME", "smartcivic"),
+        "USER": os.getenv("DB_USER", "postgres"),
+        "PASSWORD": os.getenv("DB_PASSWORD", ""),
+        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
 
@@ -165,8 +165,10 @@ CELERY_TASK_ALWAYS_EAGER     = os.getenv("CELERY_ALWAYS_EAGER", "False") == "Tru
 # ── Hugging Face Spaces (inference API) ───────────────────────────────────────
 # Deploy your trained models as Gradio Spaces on https://huggingface.co/spaces
 # and paste the Space URLs + your HF read token here.
-HF_NLP_API_URL   = os.getenv("HF_NLP_API_URL", "")    # /run/predict_nlp
-HF_IMAGE_API_URL = os.getenv("HF_IMAGE_API_URL", "")  # /run/predict_image
+HF_SPACE_NAME    = os.getenv("HF_SPACE_NAME", "")     # e.g. "smartCivic/smartcivic-ai"
 HF_API_TOKEN     = os.getenv("HF_API_TOKEN", "")      # hf_xxxx (free read token)
-HF_NLP_TOKEN = HF_API_TOKEN  # This maps the expected name to your existing one
+HF_NLP_TOKEN     = os.getenv("HF_NLP_TOKEN", "") or HF_API_TOKEN
+# Legacy — kept so nothing else breaks if still referenced
+HF_NLP_API_URL   = os.getenv("HF_NLP_API_URL", "")
+HF_IMAGE_API_URL = os.getenv("HF_IMAGE_API_URL", "")
 

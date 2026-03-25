@@ -104,7 +104,6 @@ class CitizenIssueListView(APIView):
             status=status.HTTP_201_CREATED
         )
 
-
 # ─── Issue Detail ─────────────────────────────────────────────────────────────
 
 class IssueDetailView(APIView):
@@ -218,7 +217,11 @@ class AuthorityVerifyView(APIView):
 
 
 class AuthorityAssignView(APIView):
-    """POST /api/issues/<id>/assign/ — authority self-assigns an issue"""
+    """POST /api/issues/<id>/assign/
+    Authority: self-assigns a verified issue.
+    Admin:     assigns to any authority by specifying assigned_to_id in body.
+               Can also re-assign already-assigned issues.
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
@@ -229,15 +232,30 @@ class AuthorityAssignView(APIView):
         except CivicIssue.DoesNotExist:
             return Response({"detail": "Not found."}, status=404)
 
-        if issue.status != CivicIssue.STATUS_VERIFIED:
-            return Response({"detail": "Issue must be verified before assignment."}, status=400)
-        if hasattr(issue, "assignment"):
-            return Response({"detail": "Already assigned."}, status=400)
+        # Admin can assign to a specific authority user
+        if is_admin(request.user):
+            assigned_to_id = request.data.get("assigned_to_id")
+            if not assigned_to_id:
+                return Response({"detail": "assigned_to_id is required."}, status=400)
+            try:
+                assignee = User.objects.get(pk=assigned_to_id, role=User.ROLE_AUTHORITY)
+            except User.DoesNotExist:
+                return Response({"detail": "Authority user not found."}, status=404)
+            # Admin can re-assign; delete existing assignment first
+            if hasattr(issue, "assignment"):
+                issue.assignment.delete()
+        else:
+            # Authority self-assigns
+            assignee = request.user
+            if issue.status != CivicIssue.STATUS_VERIFIED:
+                return Response({"detail": "Issue must be verified before assignment."}, status=400)
+            if hasattr(issue, "assignment"):
+                return Response({"detail": "Already assigned."}, status=400)
 
         sla_hours = int(request.data.get("sla_hours", 72))
         note = request.data.get("note", "")
         Assignment.objects.create(
-            issue=issue, assigned_to=request.user,
+            issue=issue, assigned_to=assignee,
             assigned_by=request.user, sla_hours=sla_hours, note=note
         )
         old_status = issue.status
@@ -246,10 +264,10 @@ class AuthorityAssignView(APIView):
         StatusUpdate.objects.create(
             issue=issue, changed_by=request.user,
             from_status=old_status, to_status=issue.status,
-            note=f"Assigned to {request.user.full_name}"
+            note=note or f"Assigned to {assignee.full_name}"
         )
         log_action(request.user, "issue_assigned", "CivicIssue", pk)
-        return Response({"message": "Issue assigned successfully."})
+        return Response({"message": "Issue assigned successfully.", "assigned_to": assignee.full_name})
 
 
 class AuthorityStatusUpdateView(APIView):

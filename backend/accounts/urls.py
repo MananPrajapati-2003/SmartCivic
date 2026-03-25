@@ -40,4 +40,7 @@ urlpatterns = [
     # ── Admin: Account Creation ───────────────────────────────────────────────
     path("admin/create-authority/", admin_views.AdminCreateAuthorityView.as_view(), name="admin-create-authority"),
     path("admin/create-admin/", admin_views.AdminCreateAdminView.as_view(), name="admin-create-admin"),
+
+    # ── Admin: Authority users list (for issue assignment) ────────────────────
+    path("admin/authority-users/", admin_views.AdminAuthorityUsersView.as_view(), name="admin-authority-users"),
 ]

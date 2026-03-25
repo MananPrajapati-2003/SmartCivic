@@ -393,3 +393,19 @@ class AdminCreateAdminView(APIView):
             {"message": "Admin account created. Credentials sent via email.", "id": user.id, "email": user.email},
             status=status.HTTP_201_CREATED,
         )
+
+
+
+class AdminAuthorityUsersView(APIView):
+    """GET /api/auth/admin/authority-users/ — list active authority accounts for assignment."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role not in (User.ROLE_ORG_ADMIN, User.ROLE_SUPER_ADMIN) and not request.user.is_staff:
+            return Response({"detail": "Forbidden."}, status=403)
+        users = (
+            User.objects.filter(role=User.ROLE_AUTHORITY, is_active=True)
+            .values("id", "full_name", "email")
+            .order_by("full_name")
+        )
+        return Response(list(users))

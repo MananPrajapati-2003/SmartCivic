@@ -23,106 +23,61 @@ def _hf_headers() -> dict:
     return {"Authorization": f"Bearer {settings.HF_API_TOKEN}"}
 
 
-def _call_hf_nlp(text: str) -> dict:
+def _call_hf_space(text: str, image_path: str = None) -> dict:
     """
-    Calls the Hugging Face NLP Space using the official Gradio Client.
-    Bypasses the '405 Method Not Allowed' error by using the correct API protocol.
-    """
-    t0 = time.time()
-    
-    try:
-        # 1. Initialize the client (Uses the space name directly)
-        # Note: You can also use settings.HF_NLP_API_URL if it's the base URL
-        client = Client("smartCivic/smartcivic-ai", token=settings.HF_NLP_TOKEN)
-        
-        # 2. Call the prediction
-        # Gradio Client automatically handles the 'data' wrapping
-        # If your Gradio function takes multiple inputs, add them here
-        
-        result = client.predict(
-            text_input=text,      # Matches 'text_input' from your logs
-            image_input=None,     # Matches 'image_input' (required but can be None)
-            api_name="/predict_all" 
-        )
-            # text_input=text,
-            # image_input=None, # Providing None for image as this is the NLP-only call
-            # api_name="/predict"
-    
-        
-        # 3. Process the result
-        # The client usually returns the contents of the 'data' list directly
-        # If result is a list, we take the first item. If it's already a dict, use it.
-        data = result[0] if isinstance(result, list) else result
+    Calls the unified SmartCivic HuggingFace Space via Gradio Client.
+    Sends both text and optional image in one call.
 
-        return {
-            "category":   data.get("category", "Road & Infrastructure"),
-            "urgency":    data.get("urgency", "medium"),
-            "sentiment":  data.get("sentiment", "neutral"),
-            "nlp_score":  float(data.get("urgency_score", 5.0)),
-            "summary":    data.get("summary", ""),
-            "confidence": float(data.get("confidence", 0.0)),
-            "latency_ms": int((time.time() - t0) * 1000),
+    HF app.py predict_all() returns:
+        {
+          "category": "Water Supply",
+          "urgency": "high",
+          "sentiment": "frustrated",
+          "urgency_score": 7.8,
+          "visual_severity": 6.2,
+          "confidence": 0.91,
+          "summary": "..."
         }
-
-    except Exception as e:
-        # Log the error so you can see it in Celery
-        print(f"AI Engine Error: {str(e)}")
-        raise e
-
-    # """
-    # POST text to the Hugging Face NLP Space (DistilBERT).
-
-    # Expected HF Gradio response shape:
-    #     { "data": [{ "category": "...", "urgency": "...",
-    #                  "sentiment": "...", "urgency_score": 7.5,
-    #                  "summary": "..." }] }
-    # """
-    # t0 = time.time()
-    # resp = requests.post(
-    #     settings.HF_NLP_API_URL,
-    #     json={"data": [text]},
-    #     headers=_hf_headers(),
-    #     timeout=30,
-    # )
-    # resp.raise_for_status()
-    # result = resp.json()["data"][0]
-    # return {
-    #     "category":  result.get("category", "Road & Infrastructure"),
-    #     "urgency":   result.get("urgency", "medium"),
-    #     "sentiment": result.get("sentiment", "neutral"),
-    #     "nlp_score": float(result.get("urgency_score", 5.0)),
-    #     "summary":   result.get("summary", ""),
-    #     "confidence":float(result.get("confidence", 0.0)),
-    #     "latency_ms": int((time.time() - t0) * 1000),
-    # }
-
-
-def _call_hf_image(image_path: str) -> dict:
-    """
-    Encode the first issue image to base64 and POST to the HF Image Space (ResNet50).
-
-    Expected HF Gradio response shape:
-        { "data": [{ "damage_type": "...", "visual_score": 8.2,
-                     "confidence": 0.87, "is_fake": false }] }
     """
     t0 = time.time()
-    with open(image_path, "rb") as f:
-        b64 = base64.b64encode(f.read()).decode("utf-8")
+    hf_space = getattr(settings, "HF_SPACE_NAME", None)
+    hf_token = getattr(settings, "HF_NLP_TOKEN", None) or getattr(settings, "HF_API_TOKEN", None)
 
-    resp = requests.post(
-        settings.HF_IMAGE_API_URL,
-        json={"data": [b64]},
-        headers=_hf_headers(),
-        timeout=45,
+    if not hf_space:
+        raise ValueError("HF_SPACE_NAME not set in settings/.env")
+
+    client = Client(hf_space, token=hf_token)
+
+    # Build image argument — Gradio needs a file handle, not raw bytes
+    image_arg = None
+    if image_path and os.path.exists(image_path):
+        image_arg = handle_file(image_path)
+
+    result = client.predict(
+        text_input=text,
+        image_input=image_arg,
+        api_name="/predict_all",
     )
-    resp.raise_for_status()
-    result = resp.json()["data"][0]
+
+    # Gradio client returns the JSON output dict directly for gr.JSON() components
+    data = result[0] if isinstance(result, (list, tuple)) else result
+    if not isinstance(data, dict):
+        raise ValueError(f"Unexpected HF response format: {type(data)} — {data}")
+
+    latency = int((time.time() - t0) * 1000)
     return {
-        "damage_type":     result.get("damage_type", ""),
-        "visual_score":    float(result.get("visual_score", 5.0)),
-        "image_confidence":float(result.get("confidence", 0.0)),
-        "is_fake_likely":  bool(result.get("is_fake", False)),
-        "latency_ms":      int((time.time() - t0) * 1000),
+        # NLP fields
+        "category":        data.get("category", "Road & Infrastructure"),
+        "urgency":         data.get("urgency", "medium"),
+        "sentiment":       data.get("sentiment", "neutral"),
+        "nlp_score":       float(data.get("urgency_score", 5.0)),
+        "summary":         data.get("summary", ""),
+        "confidence":      float(data.get("confidence", 0.0)),
+        # Vision fields (now comes from same call)
+        "visual_score":    float(data.get("visual_severity", 5.0)),
+        "damage_type":     "",          # future: add to HF app response
+        "is_fake_likely":  False,       # future: add to HF app response
+        "latency_ms":      latency,
     }
 
 
@@ -166,64 +121,55 @@ def analyze_issue(self, issue_id: int):
     issue.save(update_fields=["ai_status"])
 
     try:
-        # ── 1. NLP call ───────────────────────────────────────────────────────
+        # ── 1. Combined NLP + Vision call (single HF Space) ───────────────────
         full_text = f"{issue.title}. {issue.description}"
-        nlp = _call_hf_nlp(full_text)
-
-        # ── 2. Image call (first image only to keep latency acceptable) ───────
-        image_data: dict = {}
         first_image = issue.images.first()
-        if first_image and first_image.image:
-            try:
-                image_data = _call_hf_image(first_image.image.path)
-            except Exception:
-                # Image call failed — degrade gracefully, still use NLP
-                image_data = {}
+        image_path = first_image.image.path if (first_image and first_image.image) else None
 
-        # ── 3 & 4. Server-side scores ─────────────────────────────────────────
+        hf = _call_hf_space(full_text, image_path)
+
+        # ── 2. Server-side scores ─────────────────────────────────────────────
         history = compute_history_score(issue)
         env = compute_env_score(issue)
 
-        # ── 5. Weighted priority score ────────────────────────────────────────
-        # Use image visual_score if we got one, else fall back to NLP score
-        visual = image_data.get("visual_score", nlp["nlp_score"])
+        # ── 3. Weighted priority score ────────────────────────────────────────
         priority = compute_priority_score(
-            visual_score=visual,
-            nlp_urgency=nlp["urgency"],
+            visual_score=hf["visual_score"],
+            nlp_urgency=hf["urgency"],
             history_score=history,
             env_score=env,
         )
 
-        # ── 6. Routing decision ───────────────────────────────────────────────
+        # ── 4. Routing decision ───────────────────────────────────────────────
         routing = determine_routing(
-            category=nlp["category"],
-            urgency=nlp["urgency"],
-            sentiment=nlp["sentiment"],
+            category=hf["category"],
+            urgency=hf["urgency"],
+            sentiment=hf["sentiment"],
             priority_score=priority,
         )
 
-        # ── 7. Persist AIAnalysisResult ───────────────────────────────────────
+        # ── 5. Persist AIAnalysisResult ───────────────────────────────────────
         AIAnalysisResult.objects.update_or_create(
             issue=issue,
             defaults={
-                "predicted_category":  nlp["category"],
-                "category_confidence": nlp["confidence"],
-                "nlp_summary":         nlp["summary"],
-                "sentiment":           nlp["sentiment"],
-                "urgency_level":       nlp["urgency"],
-                "nlp_score":           nlp["nlp_score"],
-                "damage_type":         image_data.get("damage_type", ""),
-                "visual_score":        image_data.get("visual_score"),
-                "image_confidence":    image_data.get("image_confidence"),
-                "is_fake_likely":      image_data.get("is_fake_likely", False),
+                "predicted_category":  hf["category"],
+                "category_confidence": hf["confidence"],
+                "nlp_summary":         hf["summary"],
+                "sentiment":           hf["sentiment"],
+                "urgency_level":       hf["urgency"],
+                "nlp_score":           hf["nlp_score"],
+                "damage_type":         hf["damage_type"],
+                "visual_score":        hf["visual_score"],
+                "image_confidence":    hf["confidence"],
+                "is_fake_likely":      hf["is_fake_likely"],
                 "history_score":       history,
                 "env_score":           env,
                 "priority_score":      priority,
                 "routing_target":      routing["target"],
                 "sla_hours":           routing["sla_hours"],
                 "alert_admin":         routing["alert_admin"],
-                "hf_nlp_latency_ms":   nlp["latency_ms"],
-                "hf_image_latency_ms": image_data.get("latency_ms"),
+                "hf_nlp_latency_ms":   hf["latency_ms"],
+                "hf_image_latency_ms": hf["latency_ms"],
                 "error_message":       "",
             },
         )
@@ -235,7 +181,7 @@ def analyze_issue(self, issue_id: int):
         # Auto-set category only if citizen left it blank
         if not issue.category:
             matched_cat = IssueCategory.objects.filter(
-                name=nlp["category"]
+                name=hf["category"]
             ).first()
             if matched_cat:
                 issue.category = matched_cat
@@ -248,13 +194,13 @@ def analyze_issue(self, issue_id: int):
             "critical": "critical",
         }
         if issue.severity == "medium":  # only override the default
-            issue.severity = urgency_to_severity.get(nlp["urgency"], "medium")
+            issue.severity = urgency_to_severity.get(hf["urgency"], "medium")
 
         issue.save()
 
         # ── 9. Admin alert for high-priority issues ───────────────────────────
         if routing["alert_admin"]:
-            send_admin_alert.delay(issue_id, priority, nlp["category"])
+            send_admin_alert.delay(issue_id, priority, hf["category"])
 
         # ── 10. Schedule SLA escalation countdown ─────────────────────────────
         check_sla_and_escalate.apply_async(
