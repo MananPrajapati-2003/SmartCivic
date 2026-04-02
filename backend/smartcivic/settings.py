@@ -4,7 +4,8 @@ import os
 from dotenv import load_dotenv
 import ssl
 
-load_dotenv()
+# Load .env from the backend/ directory (where manage.py lives)
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
