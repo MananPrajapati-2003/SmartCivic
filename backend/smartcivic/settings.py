@@ -3,6 +3,7 @@ from datetime import timedelta
 import os
 from dotenv import load_dotenv
 import ssl
+import dj_database_url
 
 # Load .env from the backend/ directory (where manage.py lives)
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -34,6 +35,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",   # ← serves static files in production
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -62,17 +64,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "smartcivic.wsgi.application"
 
-# ─── Database (PostgreSQL) ──────────────────────────────────────────────────
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "smartcivic"),
-        "USER": os.getenv("DB_USER", "postgres"),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+# ─── Database ────────────────────────────────────────────────────────────────
+# On Render, DATABASE_URL is injected automatically when you attach a PostgreSQL
+# service. Locally, the individual DB_* vars are used as fallback.
+_db_url = os.getenv("DATABASE_URL")
+if _db_url:
+    DATABASES = {"default": dj_database_url.config(default=_db_url, conn_max_age=600, ssl_require=True)}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME", "smartcivic"),
+            "USER": os.getenv("DB_USER", "postgres"),
+            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+        }
     }
-}
 
 # ─── Custom User Model ──────────────────────────────────────────────────────
 AUTH_USER_MODEL = "accounts.User"
@@ -94,6 +102,7 @@ USE_TZ = True
 # ─── Static & Media Files ────────────────────────────────────────────────────
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -101,9 +110,13 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ─── CORS ────────────────────────────────────────────────────────────────────
+# CORS_EXTRA_ORIGINS: comma-separated list of extra allowed origins (e.g. your
+# Vercel URL). Set this env var on Render once you know your Vercel domain.
+_extra_origins = [o.strip() for o in os.getenv("CORS_EXTRA_ORIGINS", "").split(",") if o.strip()]
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    *_extra_origins,
 ]
 CORS_ALLOW_CREDENTIALS = True
 

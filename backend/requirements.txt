@@ -10,3 +10,8 @@ requests>=2.31
 # ── Async task queue (Upstash Redis — serverless, no Docker) ─────────────────
 celery>=5.3
 redis>=5.0         # Upstash-compatible Redis client
+
+# ── Production deployment ─────────────────────────────────────────────────────
+gunicorn>=21.2          # WSGI server for Render
+whitenoise>=6.6         # Serve static files without a CDN
+dj-database-url>=2.1   # Parse DATABASE_URL env var (Render PostgreSQL)

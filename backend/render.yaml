@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: smartcivic-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn smartcivic.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "smartcivic-backend.onrender.com"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smartcivic-db
+          property: connectionString
+      - key: CORS_EXTRA_ORIGINS
+        sync: false   # fill in after Vercel deploy
+      - key: FRONTEND_URL
+        sync: false   # fill in after Vercel deploy
+      - key: CELERY_BROKER_URL
+        sync: false
+      - key: CELERY_RESULT_BACKEND
+        sync: false
+      - key: HF_API_TOKEN
+        sync: false
+      - key: HF_NLP_API_URL
+        sync: false
+      - key: HF_IMAGE_API_URL
+        sync: false
+      - key: HF_SPACE_NAME
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: FAST2SMS_API_KEY
+        sync: false
+
+databases:
+  - name: smartcivic-db
+    plan: free
+    databaseName: smartcivic
+    user: smartcivic
