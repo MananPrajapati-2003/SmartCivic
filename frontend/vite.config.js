@@ -4,17 +4,17 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // VITE_API_BASE_URL is only used in local dev to override the proxy target.
+  // In production (Vercel), vercel.json rewrites handle /api → Render backend.
   server: {
     proxy: {
-      // Forward all /api requests to the Django backend
       '/api': {
-        target: 'http://localhost:8000',
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
       },
-      // Forward media file requests to Django
       '/media': {
-        target: 'http://localhost:8000',
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
       },
