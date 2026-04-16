@@ -9,12 +9,14 @@
  * Usage:
  *   <AIAnalysisBadge issueId={issue.id} initialStatus={issue.ai_status} />
  */
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useAIStatus, type AIStatus } from "../hooks/useAIStatus";
+
 
 interface Props {
   issueId: number;
   initialStatus?: AIStatus;
+  onDone?: () => void;
 }
 
 const URGENCY_COLORS: Record<string, string> = {
@@ -30,13 +32,21 @@ const SENTIMENT_ICON: Record<string, string> = {
   positive: "😊",
 };
 
-export const AIAnalysisBadge: React.FC<Props> = ({ issueId, initialStatus = "pending" }) => {
-  const { aiStatus, aiResult, isLoading } = useAIStatus(
-    initialStatus !== "done" ? issueId : null
-  );
+export const AIAnalysisBadge: React.FC<Props> = ({ issueId, initialStatus = "pending", onDone }) => {
+  // Always pass issueId — hook fetches once when already "done" to get the result data
+  const { aiStatus, aiResult } = useAIStatus(issueId);
 
-  // If already done when component mounts, use backend-provided data
-  const effectiveStatus = initialStatus === "done" ? "done" : aiStatus;
+  const effectiveStatus = aiStatus === "pending" && initialStatus === "done" ? "done" : aiStatus;
+
+  // Fire onDone only when status *transitions* to "done" (not on every render)
+  const prevStatusRef = useRef<string>(initialStatus ?? "pending");
+  useEffect(() => {
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = effectiveStatus;
+    if (effectiveStatus === "done" && prev !== "done") {
+      onDone?.();
+    }
+  }, [effectiveStatus]); // intentionally omit onDone to avoid re-firing on re-renders
 
   // ── Processing / Pending ─────────────────────────────────────────────────
   if (effectiveStatus === "pending" || effectiveStatus === "processing") {

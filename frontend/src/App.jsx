@@ -9,6 +9,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 // Public pages
 import HomePage from "./pages/HomePage";
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
 import Register from "./pages/auth/Register";
 import { Login } from "./pages/auth/Login";
 import VerifyEmail from "./pages/auth/VerifyEmail";
@@ -65,6 +67,8 @@ function App() {
           {/* ── Public site ──────────────────────────────────────── */}
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />

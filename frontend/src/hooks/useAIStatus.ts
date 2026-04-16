@@ -67,17 +67,19 @@ export function useAIStatus(issueId: number | null): UseAIStatusReturn {
         if (status === "done") {
           setAIResult(data.ai_result);
           setIsLoading(false);
-          stopPolling();
+          stopPolling();  // stop — result is in
         } else if (status === "failed") {
           setIsLoading(false);
           stopPolling();
         }
+        // else keep polling — still pending/processing
       } catch {
         // Network error — keep polling silently
       }
     };
 
-    // First call immediately, then every POLL_INTERVAL_MS
+    // Always fetch immediately (even if already done — to get the result data)
+    // then continue polling every 3s only if still pending/processing
     poll();
     intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
 

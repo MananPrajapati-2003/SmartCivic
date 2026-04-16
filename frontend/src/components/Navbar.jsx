@@ -6,8 +6,6 @@ import StaggeredMenu from "./background/StaggeredMenu";
 import { Button } from "./ui/Button";
 import { useAuth } from "../context/AuthContext";
 
-export const BASE_URL = "http://localhost:8000";
-
 export const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();

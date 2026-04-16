@@ -197,7 +197,7 @@ export default function CitizenDashboard() {
                             </span>
                           </div>
                           <div onClick={e => e.stopPropagation()}>
-                            <AIAnalysisBadge issueId={issue.id} initialStatus={issue.ai_status} />
+                            <AIAnalysisBadge issueId={issue.id} initialStatus={issue.ai_status} onDone={fetchIssues} />
                           </div>
                         </div>
                       </div>

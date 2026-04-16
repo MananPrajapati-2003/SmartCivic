@@ -74,7 +74,7 @@ api.interceptors.response.use(
       }
 
       try {
-        const { data } = await axios.post("/api/auth/token/refresh/", { refresh });
+        const { data } = await api.post("/auth/token/refresh/", { refresh });
         localStorage.setItem("access", data.access);
         // Store new refresh token if rotation is enabled
         if (data.refresh) {

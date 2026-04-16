@@ -66,7 +66,10 @@ export default function ReportIssue() {
   };
 
   const handleLocationClick = () => {
-    if (!("geolocation" in navigator)) return;
+    if (!("geolocation" in navigator)) {
+      setErrors(e => ({ ...e, location_address: "Geolocation is not supported by your browser." }));
+      return;
+    }
     setLoadingLoc(true);
     navigator.geolocation.getCurrentPosition(
       pos => {
@@ -77,7 +80,11 @@ export default function ReportIssue() {
         }));
         setLoadingLoc(false);
       },
-      () => setLoadingLoc(false)
+      () => {
+        setLoadingLoc(false);
+        setErrors(e => ({ ...e, location_address: "Location access denied. Please type your address manually." }));
+      },
+      { timeout: 8000 }
     );
   };
 
@@ -106,9 +113,7 @@ export default function ReportIssue() {
       if (form.longitude) fd.append("longitude", form.longitude);
       images.forEach(img => fd.append("images", img));
 
-      const { data } = await api.post("/issues/", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const { data } = await api.post("/issues/", fd);
 
       setSubmitted(data);
       // Scroll to top to show success banner
@@ -164,7 +169,7 @@ export default function ReportIssue() {
 
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => navigate("/citizen/dashboard")}
+              onClick={() => navigate("/dashboard")}
               className="py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               View My Issues <ChevronRight size={14} />

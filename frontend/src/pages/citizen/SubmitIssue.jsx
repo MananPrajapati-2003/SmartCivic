@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  MapPin, Camera, Upload, X, CheckCircle, Loader2,
+  MapPin, X, CheckCircle, Loader2,
   ArrowLeft, ArrowRight, AlertTriangle, FileImage,
   Zap, Navigation
 } from "lucide-react";
@@ -192,9 +192,9 @@ export default function SubmitIssue() {
       if (longitude) fd.append("longitude", longitude);
       images.forEach(img => fd.append("images", img));
 
-      const res = await api.post("/issues/", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // Do NOT manually set Content-Type for FormData — browser must set it
+      // with the multipart boundary automatically, otherwise Django can't parse fields.
+      const res = await api.post("/issues/", fd);
       setSuccess(res.data);
     } catch (err) {
       const d = err?.response?.data;
