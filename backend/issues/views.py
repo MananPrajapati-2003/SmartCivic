@@ -430,7 +430,6 @@ class SubmitFeedbackView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
 
-        rating = serializer.validated_data.get("rating", 3)
         IssueFeedback.objects.create(
             issue=issue, submitted_by=request.user, **serializer.validated_data
         )

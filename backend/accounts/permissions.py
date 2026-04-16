@@ -1,4 +1,5 @@
 from rest_framework.permissions import BasePermission
+from .models import User
 
 
 class IsSuperAdmin(BasePermission):
@@ -8,7 +9,7 @@ class IsSuperAdmin(BasePermission):
         return (
             request.user
             and request.user.is_authenticated
-            and request.user.role == "super_admin"
+            and request.user.role == User.ROLE_SUPER_ADMIN
         )
 
 
@@ -19,7 +20,7 @@ class IsOrgAdmin(BasePermission):
         return (
             request.user
             and request.user.is_authenticated
-            and request.user.role in ("org_admin", "super_admin")
+            and request.user.role in (User.ROLE_ORG_ADMIN, User.ROLE_SUPER_ADMIN)
         )
 
 
@@ -30,7 +31,7 @@ class IsAuthority(BasePermission):
         return (
             request.user
             and request.user.is_authenticated
-            and request.user.role in ("authority", "org_admin", "super_admin")
+            and request.user.role in (User.ROLE_AUTHORITY, User.ROLE_ORG_ADMIN, User.ROLE_SUPER_ADMIN)
         )
 
 
@@ -41,7 +42,7 @@ class IsNGOorCSR(BasePermission):
         return (
             request.user
             and request.user.is_authenticated
-            and request.user.role in ("ngo_csr", "org_admin", "super_admin")
+            and request.user.role in (User.ROLE_NGO_CSR, User.ROLE_ORG_ADMIN, User.ROLE_SUPER_ADMIN)
         )
 
 
@@ -52,7 +53,7 @@ class IsCitizen(BasePermission):
         return (
             request.user
             and request.user.is_authenticated
-            and request.user.role == "citizen"
+            and request.user.role == User.ROLE_CITIZEN
         )
 
 
@@ -63,5 +64,5 @@ class IsStaffRole(BasePermission):
         return (
             request.user
             and request.user.is_authenticated
-            and request.user.role != "citizen"
+            and request.user.role != User.ROLE_CITIZEN
         )

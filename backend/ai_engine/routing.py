@@ -14,19 +14,29 @@ Rules:
 
 # ── Category → routing group ──────────────────────────────────────────────────
 CATEGORY_GROUP: dict[str, str] = {
-    # Must match the candidate_labels in the HuggingFace app.py exactly
-    "Road & Infrastructure":     "government",
-    "Water Supply":               "government",
-    "Sanitation & Garbage":       "government",
-    "Public Safety & Lighting":   "government",
-    "Other":                      "government",
-    # Legacy names (keep for backward compat with old AI results)
-    "Sanitation & Waste":         "government",
-    "Electricity":                "government",
-    "Public Safety":              "government",
-    "Environment & Trees":        "ngo",
-    "Animal Welfare":             "ngo",
-    "Community & Social":         "ngo",
+    # ── Actual class names returned by the trained ResNet50 HF Space ──────────
+    # (from class_mapping.json: Domestic_trash, Infrastructure_Damage_Concrete,
+    #  Parking_Issues_Illegal_Parking, Road_Issues_Damaged_Sign,
+    #  Road_Issues_Pothole, Vandalism_Graffiti)
+    "Road_Issues_Pothole":               "government",
+    "Road_Issues_Damaged_Sign":          "government",
+    "Infrastructure_Damage_Concrete":    "government",
+    "Parking_Issues_Illegal_Parking":    "government",
+    "Domestic_trash":                    "government",
+    "Vandalism_Graffiti":                "ngo",
+
+    # ── Display / legacy names (kept for backward compat) ─────────────────────
+    "Road & Infrastructure":             "government",
+    "Water Supply":                      "government",
+    "Sanitation & Garbage":              "government",
+    "Public Safety & Lighting":          "government",
+    "Sanitation & Waste":                "government",
+    "Electricity":                       "government",
+    "Public Safety":                     "government",
+    "Other":                             "government",
+    "Environment & Trees":               "ngo",
+    "Animal Welfare":                    "ngo",
+    "Community & Social":                "ngo",
 }
 
 # ── (routing_group, urgency_level) → SLA hours ───────────────────────────────

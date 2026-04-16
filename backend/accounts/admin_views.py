@@ -106,10 +106,12 @@ class AdminStatsView(APIView):
             "monthly_registrations": [
                 {"month": r["month"].strftime("%b %Y"), "count": r["count"]}
                 for r in monthly
+                if r["month"] is not None
             ],
             "daily_registrations": [
                 {"day": r["day"].strftime("%d %b"), "count": r["count"]}
                 for r in daily
+                if r["day"] is not None
             ],
         })
 

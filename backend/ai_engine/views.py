@@ -7,6 +7,7 @@ AIStatsView    — GET /api/ai/stats/              (Admin dashboard metrics)
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from accounts.models import User
 
 
 class AIStatusView(APIView):
@@ -36,7 +37,7 @@ class AIStatusView(APIView):
             return Response({"detail": "Issue not found."}, status=404)
 
         # Citizens can only poll their own issues
-        if request.user.role == "citizen" and issue.reported_by != request.user:
+        if request.user.role == User.ROLE_CITIZEN and issue.reported_by != request.user:
             return Response({"detail": "Forbidden."}, status=403)
 
         result_data = None
@@ -60,7 +61,6 @@ class AIStatsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        from accounts.models import User
         if request.user.role not in (
             User.ROLE_ORG_ADMIN, User.ROLE_SUPER_ADMIN
         ) and not request.user.is_staff:

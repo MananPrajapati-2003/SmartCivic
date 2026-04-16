@@ -24,9 +24,8 @@ class IssueImageSerializer(serializers.ModelSerializer):
         fields = ["id", "url", "caption", "uploaded_at"]
 
     def get_url(self, obj):
-        request = self.context.get("request")
-        if obj.image and request:
-            return request.build_absolute_uri(obj.image.url)
+        if obj.image:
+            return obj.image.url  # relative: /media/issues/...
         return None
 
 
@@ -45,9 +44,8 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
         ]
 
     def get_proof_url(self, obj):
-        request = self.context.get("request")
-        if obj.proof_image and request:
-            return request.build_absolute_uri(obj.proof_image.url)
+        if obj.proof_image:
+            return obj.proof_image.url
         return None
 
 
@@ -87,9 +85,8 @@ class NGOAssistanceSerializer(serializers.ModelSerializer):
             return None
 
     def get_proof_url(self, obj):
-        request = self.context.get("request")
-        if obj.proof_image and request:
-            return request.build_absolute_uri(obj.proof_image.url)
+        if obj.proof_image:
+            return obj.proof_image.url
         return None
 
 
@@ -136,10 +133,9 @@ class IssueListSerializer(serializers.ModelSerializer):
         ]
 
     def get_thumbnail(self, obj):
-        request = self.context.get("request")
         img = obj.images.first()
-        if img and request:
-            return request.build_absolute_uri(img.image.url)
+        if img and img.image:
+            return img.image.url  # relative: /media/issues/...
         return None
 
     def get_has_feedback(self, obj):

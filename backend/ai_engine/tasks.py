@@ -6,16 +6,13 @@ check_sla_and_escalate — fired after SLA window, auto-escalates if unresolved
 send_admin_alert    — emails Authority dashboard when score > 8
 """
 import time
-import base64
+import os
 
-import requests
 from celery import shared_task
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
 from gradio_client import Client, handle_file
-from django.conf import settings
-import os
 
 # ── HuggingFace API helpers ───────────────────────────────────────────────────
 
@@ -53,9 +50,11 @@ def _call_hf_space(text: str, image_path: str = None) -> dict:
     if image_path and os.path.exists(image_path):
         image_arg = handle_file(image_path)
 
+    # Gradio Blocks maps inputs positionally — do NOT use keyword args here.
+    # Order must match: [t_in (text), i_in (image)] as defined in app.py.
     result = client.predict(
-        text_input=text,
-        image_input=image_arg,
+        text,
+        image_arg,
         api_name="/predict_all",
     )
 
@@ -64,20 +63,27 @@ def _call_hf_space(text: str, image_path: str = None) -> dict:
     if not isinstance(data, dict):
         raise ValueError(f"Unexpected HF response format: {type(data)} — {data}")
 
+    # HF app returns {"error": "..."} when no image is provided.
+    # We treat this as a text-only analysis with safe defaults rather than crashing.
+    if "error" in data:
+        data = {}  # fall through to defaults below
+
     latency = int((time.time() - t0) * 1000)
+    # urgency_score is confidence*10 (0–10) — use it for both nlp_score and visual_score
+    raw_score = float(data.get("urgency_score", 5.0))
     return {
         # NLP fields
-        "category":        data.get("category", "Road & Infrastructure"),
-        "urgency":         data.get("urgency", "medium"),
-        "sentiment":       data.get("sentiment", "neutral"),
-        "nlp_score":       float(data.get("urgency_score", 5.0)),
-        "summary":         data.get("summary", ""),
-        "confidence":      float(data.get("confidence", 0.0)),
-        # Vision fields (now comes from same call)
-        "visual_score":    float(data.get("visual_severity", 5.0)),
-        "damage_type":     "",          # future: add to HF app response
-        "is_fake_likely":  False,       # future: add to HF app response
-        "latency_ms":      latency,
+        "category":       data.get("category", "Road & Infrastructure"),
+        "urgency":        data.get("urgency", "medium"),
+        "sentiment":      data.get("sentiment", "neutral"),
+        "nlp_score":      raw_score,
+        "summary":        data.get("summary", ""),
+        "confidence":     raw_score / 10.0,  # normalise back to 0–1 for storage
+        # Vision score: HF app returns the same confidence-based score as visual severity
+        "visual_score":   raw_score,
+        "damage_type":    "",
+        "is_fake_likely": False,
+        "latency_ms":     latency,
     }
 
 
@@ -231,7 +237,13 @@ def check_sla_and_escalate(issue_id: int):
     from issues.models import CivicIssue
     from ai_engine.models import EscalationLog
 
-    TERMINAL_STATUSES = {"resolved", "closed", "rejected", "fake"}
+    TERMINAL_STATUSES = {
+        CivicIssue.STATUS_RESOLVED,
+        CivicIssue.STATUS_CLOSED,
+        CivicIssue.STATUS_REJECTED,
+        CivicIssue.STATUS_FAKE,
+        CivicIssue.STATUS_ESCALATED,  # already escalated — don't double-escalate
+    }
 
     try:
         issue = CivicIssue.objects.select_related("ai_result").get(pk=issue_id)
@@ -239,13 +251,13 @@ def check_sla_and_escalate(issue_id: int):
         return
 
     if issue.status in TERMINAL_STATUSES:
-        return  # already resolved — nothing to do
+        return  # already resolved/escalated — nothing to do
 
     # Escalate
     old_status = issue.status
     issue.is_escalated = True
     issue.escalated_at = timezone.now()
-    issue.status = "escalated"
+    issue.status = CivicIssue.STATUS_ESCALATED
     issue.save()
 
     sla_hours = getattr(getattr(issue, "ai_result", None), "sla_hours", 72)
@@ -272,7 +284,8 @@ def send_admin_alert(issue_id: int, priority_score: float, category: str):
     # Fetch all Authority + Admin emails
     authority_emails = list(
         User.objects.filter(
-            role__in=["authority", "org_admin", "super_admin"], is_active=True
+            role__in=[User.ROLE_AUTHORITY, User.ROLE_ORG_ADMIN, User.ROLE_SUPER_ADMIN],
+            is_active=True,
         ).values_list("email", flat=True)
     )
 
