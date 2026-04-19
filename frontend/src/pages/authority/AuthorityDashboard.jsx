@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  CheckSquare, Clock, TrendingUp, AlertOctagon,
+  CheckSquare, Clock, TrendingUp, AlertOctagon, ShieldAlert,
   ChevronRight, RefreshCcw, ClipboardList, Flame,
   CalendarClock, MapPin, ArrowRight
 } from "lucide-react";
@@ -49,14 +49,16 @@ export default function AuthorityDashboard() {
         api.get("/issues/assigned/"),
       ]);
       const queue    = queueRes.data;
-      const assigned = assignedRes.data;
+      const assigned = Array.isArray(assignedRes.data) ? assignedRes.data : (assignedRes.data?.results || []);
       setRecentQueue(queue.results || []);
-      setMyIssues(assigned || []);
+      setMyIssues(assigned);
       setStats({
         queue:      queue.total || 0,
-        assigned:   assigned.length || 0,
+        assigned:   assigned.length,
         inProgress: assigned.filter(i => i.status === "in_progress").length,
+        escalated:  assigned.filter(i => i.status === "escalated").length,
         overdue:    assigned.filter(i => i.is_overdue).length,
+        aiAlerts:   (queue.results || []).filter(i => i.ai_urgency === "critical" || i.ai_urgency === "high").length,
       });
     } catch (e) {
       console.error(e);
@@ -108,12 +110,14 @@ export default function AuthorityDashboard() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: "Pending Queue", value: stats?.queue ?? "—",      icon: <Clock size={20} />,        color: "from-amber-600 to-orange-600",   glow: "shadow-amber-500/20",   action: () => navigate("/authority/queue") },
-          { label: "My Assignments",value: stats?.assigned ?? "—",   icon: <ClipboardList size={20} />,color: "from-blue-600 to-indigo-600",    glow: "shadow-blue-500/20",    action: () => navigate("/authority/my-issues") },
-          { label: "In Progress",   value: stats?.inProgress ?? "—", icon: <TrendingUp size={20} />,   color: "from-cyan-600 to-teal-600",      glow: "shadow-cyan-500/20" },
-          { label: "SLA Overdue",   value: stats?.overdue ?? "—",    icon: <AlertOctagon size={20} />, color: stats?.overdue > 0 ? "from-red-600 to-rose-600" : "from-slate-600 to-slate-700", glow: stats?.overdue > 0 ? "shadow-red-500/25" : "", action: () => navigate("/authority/my-issues") },
+          { label: "Pending Queue",  value: stats?.queue      ?? "—", icon: <Clock size={20} />,         color: "from-amber-600 to-orange-600",  glow: "shadow-amber-500/20",  action: () => navigate("/authority/queue") },
+          { label: "My Assignments", value: stats?.assigned   ?? "—", icon: <ClipboardList size={20} />, color: "from-blue-600 to-indigo-600",   glow: "shadow-blue-500/20",   action: () => navigate("/authority/my-issues") },
+          { label: "In Progress",    value: stats?.inProgress ?? "—", icon: <TrendingUp size={20} />,    color: "from-cyan-600 to-teal-600",     glow: "shadow-cyan-500/20",   action: () => navigate("/authority/my-issues") },
+          { label: "Escalated",      value: stats?.escalated  ?? "—", icon: <Flame size={20} />,         color: stats?.escalated > 0 ? "from-orange-600 to-red-600" : "from-slate-600 to-slate-700", glow: stats?.escalated > 0 ? "shadow-orange-500/25" : "", action: () => navigate("/authority/my-issues") },
+          { label: "SLA Overdue",    value: stats?.overdue    ?? "—", icon: <AlertOctagon size={20} />,  color: stats?.overdue > 0 ? "from-red-600 to-rose-600" : "from-slate-600 to-slate-700", glow: stats?.overdue > 0 ? "shadow-red-500/25" : "",    action: () => navigate("/authority/my-issues") },
+          { label: "AI Alerts",      value: stats?.aiAlerts   ?? "—", icon: <ShieldAlert size={20} />,   color: stats?.aiAlerts > 0 ? "from-purple-600 to-violet-700" : "from-slate-600 to-slate-700", glow: stats?.aiAlerts > 0 ? "shadow-purple-500/25" : "", action: () => navigate("/authority/queue") },
         ].map(s => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             onClick={s.action}

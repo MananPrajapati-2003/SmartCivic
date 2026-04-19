@@ -2,18 +2,21 @@ import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Users, Settings,
+  LayoutDashboard, Users, Settings, ShieldCheck,
   ChevronLeft, ChevronRight, LogOut, Menu,
-  Bell, Gauge, Building2, UserPlus, ClipboardList,
+  Gauge, Building2, UserPlus, ClipboardList, User, PanelTop,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useSiteSettings } from "../../context/SiteSettingsContext";
 import api from "../../api/axiosInstance";
+import NotificationBell from "../../components/NotificationBell";
 
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [ngoPending, setNgoPending] = useState(0);
   const { user, logout } = useAuth();
+  const { settings } = useSiteSettings();
   const navigate = useNavigate();
 
   // Fetch pending NGO count for sidebar badge
@@ -23,18 +26,26 @@ export default function AdminLayout() {
       .catch(() => {});
   }, []);
 
+  const isSuperAdmin = user?.role === "super_admin";
+
+  // org_admin gets all operational items; super_admin also gets Settings + "Create Admin" capability
   const navItems = [
-    { to: "/admin",          label: "Dashboard",    icon: LayoutDashboard, end: true },
-    { to: "/admin/issues",   label: "Issues",       icon: ClipboardList },
-    { to: "/admin/users",    label: "Users",        icon: Users },
+    { to: "/admin",               label: "Dashboard",     icon: LayoutDashboard, end: true },
+    { to: "/admin/issues",        label: "Issues",        icon: ClipboardList },
+    { to: "/admin/users",         label: "Users",         icon: Users },
     { to: "/admin/ngo-approvals", label: "NGO Approvals", icon: Building2, badge: ngoPending > 0 ? ngoPending : null },
-    { to: "/admin/create-account", label: "Create Account", icon: UserPlus },
-    { to: "/admin/settings", label: "Settings",     icon: Settings },
+    { to: "/admin/create-account",label: "Create Account",icon: UserPlus },
+    // Super admin only items
+    ...(isSuperAdmin ? [
+      { to: "/admin/rights",   label: "Rights",       icon: ShieldCheck },
+      { to: "/admin/cms",      label: "Page Builder", icon: PanelTop    },
+      { to: "/admin/settings", label: "Settings",     icon: Settings    },
+    ] : []),
   ];
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login");
+    navigate("/login", { replace: true, state: null });
   };
 
   const Sidebar = ({ mobile = false }) => (
@@ -49,7 +60,7 @@ export default function AdminLayout() {
         </div>
         {(!collapsed || mobile) && (
           <div>
-            <p className="text-white font-bold text-sm">SmartCivic</p>
+            <p className="text-white font-bold text-sm">{settings?.site_name || "SmartCivic"}</p>
             <p className="text-indigo-400 text-xs font-medium">Admin Panel</p>
           </div>
         )}
@@ -163,7 +174,7 @@ export default function AdminLayout() {
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
-            {/* NGO badge in top bar too */}
+            {/* NGO badge in top bar */}
             {ngoPending > 0 && (
               <button
                 onClick={() => navigate("/admin/ngo-approvals")}
@@ -172,12 +183,17 @@ export default function AdminLayout() {
                 <Building2 size={12} /> {ngoPending} Pending NGO{ngoPending !== 1 ? "s" : ""}
               </button>
             )}
-            <button className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
-              <Bell size={16} />
+            <NotificationBell accentColor="indigo" />
+            <button
+              onClick={() => navigate("/profile")}
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold hover:ring-2 hover:ring-indigo-400/50 transition-all overflow-hidden"
+              title="My Profile"
+            >
+              {user?.profile_image
+                ? <img src={user.profile_image} alt="" className="w-full h-full object-cover" />
+                : (user?.full_name?.[0]?.toUpperCase() || <User size={14} />)
+              }
             </button>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-              {user?.full_name?.[0]?.toUpperCase() || "A"}
-            </div>
           </div>
         </header>
 

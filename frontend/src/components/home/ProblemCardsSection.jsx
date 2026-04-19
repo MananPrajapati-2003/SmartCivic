@@ -76,7 +76,7 @@ const ProblemCardsSection = () => {
           <span className="text-cyan-400 font-bold uppercase tracking-widest text-sm">
             Services
           </span>
-          <h2 className="text-4xl md:text-5xl font-bold mt-2 text-white">
+          <h2 className="text-4xl md:text-6xl font-bold mt-2 text-white">
             Types of Problems We Resolve
           </h2>
         </motion.div>
@@ -128,8 +128,8 @@ const ProblemCardsSection = () => {
                         backdrop-blur-xl border-2 shadow-2xl transition-colors duration-500
                         ${
                           offset === 0
-                            ? `bg-gray-900/80 ${item.color} shadow-[0_0_30px_rgba(255,255,255,0.1)]`
-                            : "bg-gray-900/40 border-gray-800"
+                            ? `bg-slate-900/90 ${item.color} shadow-[0_0_40px_rgba(255,255,255,0.12)]`
+                            : "bg-slate-900/60 border-slate-700/60"
                         }
                       `}
                     onClick={() => {
@@ -140,8 +140,8 @@ const ProblemCardsSection = () => {
                     <div className="p-4 rounded-2xl bg-black/20">
                       {item.icon}
                     </div>
-                    <h3 className="text-2xl font-bold">{item.title}</h3>
-                    <p className="text-gray-400">{item.description}</p>
+                    <h3 className="text-2xl font-bold text-white">{item.title}</h3>
+                    <p className="text-slate-300 text-base leading-relaxed">{item.description}</p>
                   </motion.div>
                 );
               })}

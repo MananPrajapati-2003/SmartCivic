@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShieldAlert, Users, Eye, Handshake, ArrowRight } from "lucide-react";
+import { useSiteSettings } from "../context/SiteSettingsContext";
 
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 28 },
@@ -38,6 +39,7 @@ const values = [
 ];
 
 const AboutPage = () => {
+  const { settings } = useSiteSettings();
   return (
     <div className="w-full min-h-screen bg-black text-white">
 
@@ -51,7 +53,7 @@ const AboutPage = () => {
           <motion.div {...fade(0)}>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-slate-400 mb-6">
               <ShieldAlert className="w-4 h-4 text-cyan-400" />
-              About SmartCivic
+              About {settings.site_name}
             </div>
           </motion.div>
 
@@ -67,10 +69,10 @@ const AboutPage = () => {
 
           <motion.p
             {...fade(0.2)}
-            className="text-lg text-slate-400 leading-relaxed"
+            className="text-lg text-slate-300 leading-relaxed"
           >
             Most civic reporting ends the same way — you file something, get an
-            automated reply, and never hear back. SmartCivic exists to change
+            automated reply, and never hear back. {settings.site_name} exists to change
             that. Real assignments, real deadlines, real follow-through.
           </motion.p>
         </div>
@@ -86,14 +88,14 @@ const AboutPage = () => {
             <h2 className="text-3xl md:text-4xl font-bold leading-snug">
               Civic infrastructure runs on people noticing things
             </h2>
-            <p className="text-slate-400 leading-relaxed">
+            <p className="text-slate-300 leading-relaxed">
               Potholes, broken streetlights, overflowing drains — these problems
               are visible to thousands of people every day. The hard part has
               never been identifying them. It's making sure the right person
               actually gets told, has a deadline, and is held to it.
             </p>
-            <p className="text-slate-400 leading-relaxed">
-              We built SmartCivic as a layer between citizens and local
+            <p className="text-slate-300 leading-relaxed">
+              We built {settings.site_name} as a layer between citizens and local
               authorities — not to replace existing governance, but to give it
               memory. Issues get assigned, prioritised by AI, and automatically
               escalated if nothing moves. NGOs can step in on cases that fall
@@ -116,7 +118,7 @@ const AboutPage = () => {
                 </div>
                 <div>
                   <p className="font-semibold text-white">{item.label}</p>
-                  <p className="text-sm text-slate-400 mt-0.5">{item.sub}</p>
+                  <p className="text-sm text-slate-300 mt-0.5">{item.sub}</p>
                 </div>
               </div>
             ))}
@@ -143,13 +145,13 @@ const AboutPage = () => {
               <motion.div
                 key={i}
                 {...fade(i * 0.1)}
-                className={`p-7 rounded-3xl bg-gray-900/50 border border-white/10 ${v.border} transition-colors`}
+                className={`p-7 rounded-3xl bg-slate-900/70 border border-white/15 ${v.border} transition-colors`}
               >
                 <div className={`w-11 h-11 rounded-2xl ${v.bg} flex items-center justify-center mb-5`}>
                   <v.icon className={`w-5 h-5 ${v.color}`} />
                 </div>
                 <h3 className="text-lg font-semibold mb-3">{v.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{v.body}</p>
+                <p className="text-slate-300 text-sm leading-relaxed">{v.body}</p>
               </motion.div>
             ))}
           </div>
@@ -161,7 +163,7 @@ const AboutPage = () => {
         <div className="max-w-4xl mx-auto">
           <motion.div {...fade(0)} className="text-center mb-12">
             <span className="text-purple-400 font-semibold uppercase tracking-widest text-xs">
-              Who uses SmartCivic
+              Who uses {settings.site_name}
             </span>
             <h2 className="text-3xl md:text-4xl font-bold mt-3">
               Everyone in the loop, all at once
@@ -199,7 +201,7 @@ const AboutPage = () => {
                 <div className={`w-1.5 self-stretch rounded-full ${item.accent} shrink-0`} />
                 <div>
                   <p className="font-semibold text-white">{item.role}</p>
-                  <p className="text-sm text-slate-400 mt-1 leading-relaxed">{item.desc}</p>
+                  <p className="text-sm text-slate-300 mt-1 leading-relaxed">{item.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -214,7 +216,7 @@ const AboutPage = () => {
           className="max-w-2xl mx-auto text-center p-12 rounded-3xl bg-white/5 border border-white/10"
         >
           <h2 className="text-3xl font-bold mb-4">Ready to report something?</h2>
-          <p className="text-slate-400 mb-8">
+          <p className="text-slate-300 mb-8">
             Create an account in under a minute. No app download needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

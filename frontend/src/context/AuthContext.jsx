@@ -111,6 +111,13 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   };
 
+  // ── Direct user update (for profile page) ────────────────────────────────
+  const updateUser = (patch) => {
+    const updated = { ...user, ...patch };
+    localStorage.setItem("user", JSON.stringify(updated));
+    setUser(updated);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -118,6 +125,8 @@ export const AuthProvider = ({ children }) => {
         loading,
         error,
         setError,
+        setUser,
+        updateUser,
         login,
         register,
         logout,

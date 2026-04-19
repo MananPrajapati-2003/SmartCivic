@@ -8,8 +8,10 @@ import {
   Instagram,
   Github,
 } from "lucide-react";
+import { useSiteSettings } from "../context/SiteSettingsContext";
 
 export const Footer = () => {
+  const { settings } = useSiteSettings();
   return (
     <footer className="relative bg-linear-to-b from-[#0b0b14] via-[#0f0f1f] to-black border-t border-white/10">
       {/* soft glow */}
@@ -24,10 +26,10 @@ export const Footer = () => {
                 <ShieldAlert className="w-5 h-5 text-white" />
               </div>
               <span className="text-lg font-bold bg-clip-text text-transparent bg-linear-to-r from-indigo-400 via-violet-400 to-pink-400">
-                SmartCivic
+                {settings.site_name}
               </span>
             </Link>
-            <p className="text-slate-400 text-sm leading-relaxed">
+            <p className="text-slate-300 text-sm leading-relaxed">
               Empowering citizens to build better communities. Report issues,
               track progress, and create impact together.
             </p>
@@ -46,7 +48,7 @@ export const Footer = () => {
                 <li key={item.label}>
                   <Link
                     to={item.path}
-                    className="text-slate-400 hover:text-indigo-400 transition-colors"
+                    className="text-slate-300 hover:text-indigo-400 transition-colors"
                   >
                     {item.label}
                   </Link>
@@ -68,7 +70,7 @@ export const Footer = () => {
                 <li key={item.label}>
                   <Link
                     to={item.path}
-                    className="text-slate-400 hover:text-violet-400 transition-colors"
+                    className="text-slate-300 hover:text-violet-400 transition-colors"
                   >
                     {item.label}
                   </Link>
@@ -97,9 +99,9 @@ export const Footer = () => {
         </div>
 
         {/* Bottom */}
-        <div className="mt-14 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-sm text-slate-500">
+        <div className="mt-14 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-sm text-slate-400">
           <p>
-            © {new Date().getFullYear()} SmartCivic Platform. All rights
+            © {new Date().getFullYear()} {settings.site_name} Platform. All rights
             reserved.
           </p>
           <p className="mt-4 md:mt-0">

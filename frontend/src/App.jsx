@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./context/AuthContext";
+import { SiteSettingsProvider } from "./context/SiteSettingsContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 // Layout
 import { Layout } from "./components/Layout";
@@ -9,8 +11,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 // Public pages
 import HomePage from "./pages/HomePage";
+import ProfilePage from "./pages/ProfilePage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
+import SLAPage from "./pages/SLAPage";
+import DynamicPage from "./pages/DynamicPage";
 import Register from "./pages/auth/Register";
 import { Login } from "./pages/auth/Login";
 import VerifyEmail from "./pages/auth/VerifyEmail";
@@ -42,6 +47,8 @@ import SettingsPage from "./pages/admin/SettingsPage";
 import NGOApprovalsPage from "./pages/admin/NGOApprovalsPage";
 import CreateAccountPage from "./pages/admin/CreateAccountPage";
 import IssuesManagementPage from "./pages/admin/IssuesManagementPage";
+import RightsPage from "./pages/admin/RightsPage";
+import CMSBuilder from "./pages/admin/CMSBuilder";
 
 /**
  * Smart role-based redirect: sends users to their dashboard after login.
@@ -59,16 +66,32 @@ function RoleRedirect() {
   }
 }
 
+/** Wraps children with ThemeProvider once we have the user ID from AuthContext */
+function ThemedApp({ children }) {
+  const { user } = useAuth();
+  return (
+    <ThemeProvider userId={user?.id}>
+      {children}
+    </ThemeProvider>
+  );
+}
+
 function App() {
   return (
     <Router>
       <AuthProvider>
+        <ThemedApp>
+        <SiteSettingsProvider>
         <Routes>
+          {/* ── Public site ──────────────────────────────────────── */}
           {/* ── Public site ──────────────────────────────────────── */}
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/sla" element={<SLAPage />} />
+            <Route path="/p/:slug" element={<DynamicPage />} />
+            <Route path="/pages/:slug" element={<DynamicPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
@@ -79,6 +102,11 @@ function App() {
 
           {/* ── Role redirect after login ─────────────────────────── */}
           <Route path="/me" element={<ProtectedRoute><RoleRedirect /></ProtectedRoute>} />
+
+          {/* ── Profile (all authenticated roles) ────────────────── */}
+          <Route element={<Layout />}>
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          </Route>
 
           {/* ── Citizen (with shared Navbar + Footer) ─────────────── */}
           <Route element={<Layout />}>
@@ -108,11 +136,15 @@ function App() {
             <Route path="ngo-approvals" element={<NGOApprovalsPage />} />
             <Route path="create-account" element={<CreateAccountPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="rights" element={<RightsPage />} />
+            <Route path="cms" element={<CMSBuilder />} />
           </Route>
 
           {/* ── Fallback ──────────────────────────────────────────── */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </SiteSettingsProvider>
+        </ThemedApp>
       </AuthProvider>
     </Router>
   );

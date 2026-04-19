@@ -1,11 +1,21 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Filter, ChevronLeft, ChevronRight,
-  Trash2, Edit3, ShieldCheck, ShieldX, X, Check,
-  UserCog, RefreshCcw, User
+  Search, ChevronLeft, ChevronRight,
+  Trash2, Edit3, X, RefreshCcw, Building2
 } from "lucide-react";
 import api from "../../api/axiosInstance";
+import { useAuth } from "../../context/AuthContext";
+
+const DEPT_OPTIONS = [
+  { value: "general",     label: "General" },
+  { value: "roads",       label: "Roads" },
+  { value: "water",       label: "Water" },
+  { value: "electricity", label: "Electricity" },
+  { value: "sanitation",  label: "Sanitation" },
+  { value: "safety",      label: "Safety" },
+  { value: "environment", label: "Environment" },
+];
 
 const ROLE_OPTIONS = [
   { value: "", label: "All Roles" },
@@ -26,6 +36,9 @@ const ROLE_BADGE = {
 
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
 function EditModal({ user, onClose, onSave }) {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === "super_admin";
+
   const [form, setForm] = useState({
     full_name: user.full_name,
     role: user.role,
@@ -33,7 +46,9 @@ function EditModal({ user, onClose, onSave }) {
     is_email_verified: user.is_email_verified,
     civic_score: user.civic_score,
   });
+  const [dept, setDept] = useState(user.department || "general");
   const [saving, setSaving] = useState(false);
+  const [savingDept, setSavingDept] = useState(false);
   const [error, setError] = useState("");
 
   const handleSave = async () => {
@@ -41,6 +56,10 @@ function EditModal({ user, onClose, onSave }) {
     setError("");
     try {
       await api.patch(`/auth/admin/users/${user.id}/`, form);
+      // If authority user and dept changed, save department too
+      if (form.role === "authority" && dept !== (user.department || "general")) {
+        await api.patch(`/auth/admin/users/${user.id}/department/`, { department: dept });
+      }
       onSave();
     } catch (err) {
       setError(err?.response?.data?.detail || "Failed to save.");
@@ -84,6 +103,23 @@ function EditModal({ user, onClose, onSave }) {
               ))}
             </select>
           </div>
+
+          {/* Department — only shown for authority role */}
+          {form.role === "authority" && (
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block flex items-center gap-1">
+                <Building2 size={11} /> Department
+              </label>
+              <select value={dept} onChange={e => setDept(e.target.value)}
+                className="w-full bg-black/40 border border-white/15 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500/60">
+                {DEPT_OPTIONS.map(d => (
+                  <option key={d.value} value={d.value}>{d.label}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-600 mt-1">Controls which issue categories this officer sees</p>
+            </div>
+          )}
+
           <div>
             <label className="text-xs text-slate-400 mb-1 block">Civic Score</label>
             <input type="number" value={form.civic_score} onChange={e => setForm(f => ({ ...f, civic_score: Number(e.target.value) }))}
@@ -129,7 +165,6 @@ export default function UsersPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page, page_size: 15, ...filters });
-      // Remove empty filters
       [...params.keys()].forEach(k => { if (!params.get(k)) params.delete(k); });
       const res = await api.get(`/auth/admin/users/?${params}`);
       setData(res.data);
@@ -177,7 +212,6 @@ export default function UsersPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 bg-white/3 border border-white/8 rounded-2xl p-4">
-        {/* Search */}
         <div className="flex items-center gap-2 bg-black/40 border border-white/12 rounded-xl px-3 py-2 flex-1 min-w-52">
           <Search size={14} className="text-slate-500 shrink-0" />
           <input
@@ -187,8 +221,6 @@ export default function UsersPage() {
             className="bg-transparent text-white text-sm w-full outline-none placeholder-slate-600"
           />
         </div>
-        
-
         <FilterSelect value={filters.role} onChange={e => { setFilters(f => ({ ...f, role: e.target.value })); setPage(1); }}
           options={ROLE_OPTIONS} />
         <FilterSelect value={filters.is_verified} onChange={e => { setFilters(f => ({ ...f, is_verified: e.target.value })); setPage(1); }}
@@ -216,7 +248,7 @@ export default function UsersPage() {
               <thead>
                 <tr className="border-b border-white/8 bg-white/2">
                   <th className="text-left px-4 py-3 text-slate-500 font-medium">User</th>
-                  <th className="text-left px-4 py-3 text-slate-500 font-medium">Role</th>
+                  <th className="text-left px-4 py-3 text-slate-500 font-medium">Role / Dept</th>
                   <th className="text-left px-4 py-3 text-slate-500 font-medium">Email</th>
                   <th className="text-left px-4 py-3 text-slate-500 font-medium">Mobile</th>
                   <th className="text-center px-4 py-3 text-slate-500 font-medium">Score</th>
@@ -256,6 +288,12 @@ export default function UsersPage() {
                       <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize ${ROLE_BADGE[u.role]}`}>
                         {u.role.replace("_", " ")}
                       </span>
+                      {u.role === "authority" && u.department && (
+                        <div className="flex items-center gap-1 mt-1 text-xs text-slate-500">
+                          <Building2 size={10} />
+                          <span className="capitalize">{u.department}</span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div>

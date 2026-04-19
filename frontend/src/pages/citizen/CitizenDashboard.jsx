@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import api from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
+import { useSiteSettings } from "../../context/SiteSettingsContext";
 import { AIAnalysisBadge } from "../../components/AIAnalysisBadge";
 
 const STATUS_CONFIG = {
@@ -38,6 +39,7 @@ const STAT_FILTERS = [
 
 export default function CitizenDashboard() {
   const { user } = useAuth();
+  const { settings } = useSiteSettings();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,7 @@ export default function CitizenDashboard() {
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-sm font-bold">
               SC
             </div>
-            <span className="font-semibold text-white">SmartCivic</span>
+            <span className="font-semibold text-white">{settings?.site_name || "SmartCivic"}</span>
             <span className="text-slate-600">|</span>
             <span className="text-slate-400 text-sm">My Dashboard</span>
           </div>

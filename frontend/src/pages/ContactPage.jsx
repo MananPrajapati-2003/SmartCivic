@@ -7,7 +7,11 @@ import {
   Phone,
   ChevronDown,
   CheckCircle,
+  Loader2,
+  AlertTriangle,
 } from "lucide-react";
+import api from "../api/axiosInstance";
+import { useSiteSettings } from "../context/SiteSettingsContext";
 
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 24 },
@@ -40,6 +44,7 @@ const faqs = [
 ];
 
 const ContactPage = () => {
+  const { settings } = useSiteSettings();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -48,16 +53,38 @@ const ContactPage = () => {
     message: "",
   });
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [serverErr, setServerErr] = useState("");
   const [openFaq, setOpenFaq] = useState(null);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Placeholder — wire to real endpoint when ready
-    setSent(true);
+    setServerErr("");
+    setSending(true);
+    try {
+      await api.post("/auth/contact/", {
+        first_name: form.firstName,
+        last_name: form.lastName,
+        email: form.email,
+        message: form.subject
+          ? `[${form.subject}]\n\n${form.message}`
+          : form.message,
+      });
+      setSent(true);
+    } catch (err) {
+      const d = err?.response?.data;
+      setServerErr(
+        d?.detail || d?.message ||
+        (typeof d === "object" && d ? Object.values(d).flat()[0] : null) ||
+        "Failed to send message. Please try again."
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -112,7 +139,7 @@ const ContactPage = () => {
                 {
                   icon: Mail,
                   label: "Email",
-                  value: "contact@smartcivic.com",
+                  value: settings.support_email,
                   sub: "For general queries and partnerships",
                 },
                 {
@@ -177,6 +204,7 @@ const ContactPage = () => {
                   <button
                     onClick={() => {
                       setSent(false);
+                      setServerErr("");
                       setForm({ firstName: "", lastName: "", email: "", subject: "", message: "" });
                     }}
                     className="mt-2 text-sm text-slate-400 hover:text-white transition-colors underline underline-offset-4"
@@ -265,12 +293,22 @@ const ContactPage = () => {
                     />
                   </div>
 
+                  {serverErr && (
+                    <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                      <AlertTriangle className="w-4 h-4 shrink-0" /> {serverErr}
+                    </div>
+                  )}
+
                   <button
                     type="submit"
-                    className="w-full py-4 bg-linear-to-r from-cyan-500 to-blue-600 rounded-xl font-semibold hover:shadow-[0_0_22px_rgba(6,182,212,0.35)] transition-shadow flex items-center justify-center gap-2 group"
+                    disabled={sending}
+                    className="w-full py-4 bg-linear-to-r from-cyan-500 to-blue-600 rounded-xl font-semibold hover:shadow-[0_0_22px_rgba(6,182,212,0.35)] disabled:opacity-60 transition-shadow flex items-center justify-center gap-2 group"
                   >
-                    Send message
-                    <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    {sending ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
+                    ) : (
+                      <>Send message <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /></>
+                    )}
                   </button>
                 </motion.form>
               )}

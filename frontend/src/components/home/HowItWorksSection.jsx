@@ -23,7 +23,7 @@ const steps = [
 
 const HowItWorksSection = () => {
   return (
-    <section className="w-full py-24 bg-black text-white px-4 relative overflow-hidden">
+    <section className="w-full py-24 bg-black text-white px-4 relative overflow-hidden transition-colors duration-200">
       {/* Decorative background elements */}
       <div className="absolute top-1/4 -left-64 w-96 h-96 bg-cyan-500/20 rounded-full blur-[100px]" />
       <div className="absolute bottom-1/4 -right-64 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px]" />
@@ -38,7 +38,7 @@ const HowItWorksSection = () => {
           <span className="text-cyan-400 font-semibold tracking-wider uppercase text-sm">
             Workflow
           </span>
-          <h2 className="text-4xl md:text-5xl font-bold mt-2 bg-clip-text text-transparent bg-linear-to-r from-white to-gray-400">
+          <h2 className="text-4xl md:text-6xl font-bold mt-2 bg-clip-text text-transparent bg-linear-to-r from-white to-slate-300">
             How It Works
           </h2>
         </motion.div>
@@ -60,7 +60,7 @@ const HowItWorksSection = () => {
                 className="w-full md:w-1/2"
               >
                 <div
-                  className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl group border border-white/10"
+                  className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl group border border-white/20"
                 >
                   <img 
                     src={step.image} 
@@ -85,17 +85,17 @@ const HowItWorksSection = () => {
                 transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
                 className="w-full md:w-1/2 space-y-6"
               >
-                <h3 className="text-3xl font-bold">{step.title}</h3>
-                <p className="text-gray-400 text-lg leading-relaxed">
+                <h3 className="text-3xl md:text-4xl font-bold text-white">{step.title}</h3>
+                <p className="text-slate-300 text-lg leading-relaxed">
                   {step.description}
                 </p>
 
                 <ul className="space-y-3">
-                  <li className="flex items-center gap-3 text-gray-300">
+                  <li className="flex items-center gap-3 text-slate-200">
                     <CheckCircle className="w-5 h-5 text-cyan-400" />
                     <span>Instant verification</span>
                   </li>
-                  <li className="flex items-center gap-3 text-gray-300">
+                  <li className="flex items-center gap-3 text-slate-200">
                     <CheckCircle className="w-5 h-5 text-cyan-400" />
                     <span>Track status</span>
                   </li>

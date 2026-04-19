@@ -1,1 +1,256 @@
 @import "tailwindcss";
+
+/* ─── Theme tokens ───────────────────────────────────────────────────────────
+   Dark is the default (no class needed — matches existing hardcoded colours).
+   Adding class="light" on <html> activates the light overrides below.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Light mode overrides */
+html.light {
+  /* Page backgrounds */
+  --bg-page:        #f1f5f9;
+  --bg-card:        #ffffff;
+  --bg-card-hover:  #f0f4f8;
+  --bg-card-dark:   #e8edf4;
+  --bg-sidebar:     #f8fafc;
+  --bg-input:       #f1f5f9;
+  --border-color:   rgba(0,0,0,0.10);
+  --border-subtle:  rgba(0,0,0,0.06);
+
+  /* Text */
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-muted:     #94a3b8;
+
+  background-color: var(--bg-page) !important;
+  color: var(--text-primary);
+}
+
+/* App shell */
+html.light body,
+html.light #root {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
+/* ── Backgrounds ─────────────────────────────────────────────────────────── */
+
+/* Pure black / near-black page backgrounds */
+html.light .bg-black,
+html.light [class*="bg-black"] {
+  background-color: var(--bg-page) !important;
+}
+
+/* Gray-800 / gray-900 card backgrounds (home page sections) */
+html.light .bg-gray-900,
+html.light .bg-gray-900\/50,
+html.light .bg-gray-900\/80,
+html.light .bg-gray-900\/40,
+html.light [class*="bg-gray-900"] {
+  background-color: var(--bg-card) !important;
+}
+html.light .bg-gray-800,
+html.light .bg-gray-800\/50,
+html.light [class*="bg-gray-800"] {
+  background-color: var(--bg-card-dark) !important;
+}
+
+/* white/opacity panels */
+html.light .bg-white\/3,
+html.light .bg-white\/2,
+html.light .bg-white\/5,
+html.light .bg-white\/8,
+html.light .bg-white\/10,
+html.light .bg-white\/15,
+html.light .bg-white\/20 {
+  background-color: var(--bg-card) !important;
+}
+
+html.light .hover\:bg-white\/3:hover,
+html.light .hover\:bg-white\/5:hover,
+html.light .hover\:bg-white\/6:hover,
+html.light .hover\:bg-white\/10:hover,
+html.light .hover\:bg-white\/20:hover {
+  background-color: var(--bg-card-hover) !important;
+}
+
+/* Dark hex page backgrounds used in dashboards */
+html.light [class*="bg-\[#060b18\]"],
+html.light [class*="bg-\[#070b14\]"],
+html.light [class*="bg-\[#0a0f1e\]"],
+html.light [class*="bg-\[#0c1220\]"],
+html.light [class*="bg-\[#0f1729\]"],
+html.light [class*="bg-\[#0a0a0a\]"],
+html.light [class*="bg-\[#0b0b14\]"],
+html.light [class*="bg-\[#0f0f1f\]"] {
+  background-color: var(--bg-page) !important;
+}
+
+/* Footer gradient */
+html.light footer {
+  background: var(--bg-card) !important;
+  border-top-color: var(--border-color) !important;
+}
+
+/* Black overlays used as card backgrounds */
+html.light .bg-black\/40,
+html.light .bg-black\/30,
+html.light .bg-black\/20,
+html.light .bg-black\/50 {
+  background-color: rgba(241, 245, 249, 0.95) !important;
+}
+
+/* ── Sidebar / Nav ───────────────────────────────────────────────────────── */
+
+html.light aside {
+  background-color: var(--bg-sidebar) !important;
+  border-color: var(--border-color) !important;
+}
+
+html.light nav {
+  background-color: rgba(248, 250, 252, 0.97) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* ── Text colours ────────────────────────────────────────────────────────── */
+
+html.light .text-white {
+  color: var(--text-primary) !important;
+}
+
+/* gray-300 / gray-400 are used heavily on home page */
+html.light .text-gray-300,
+html.light .text-gray-200 {
+  color: var(--text-secondary) !important;
+}
+html.light .text-gray-400,
+html.light .text-gray-500,
+html.light .text-gray-600 {
+  color: var(--text-muted) !important;
+}
+
+html.light .text-slate-400,
+html.light .text-slate-500 {
+  color: var(--text-secondary) !important;
+}
+html.light .text-slate-600 {
+  color: var(--text-muted) !important;
+}
+
+/* group-hover text overrides: don't fight them, just lift secondary */
+html.light .group:hover .group-hover\:text-gray-300 {
+  color: var(--text-secondary) !important;
+}
+
+/* ── Borders ─────────────────────────────────────────────────────────────── */
+
+html.light .border-white\/5,
+html.light .border-white\/8,
+html.light .border-white\/10,
+html.light .border-white\/12,
+html.light .border-white\/15,
+html.light .border-white\/20 {
+  border-color: var(--border-color) !important;
+}
+
+html.light .border-gray-800,
+html.light .border-gray-700 {
+  border-color: var(--border-color) !important;
+}
+
+/* Decorative top-line separators (home page section tops) */
+html.light .via-cyan-500\/50 {
+  --tw-gradient-via: rgba(6,182,212,0.25) !important;
+}
+
+/* ── Inputs / Forms ──────────────────────────────────────────────────────── */
+
+html.light input,
+html.light textarea,
+html.light select {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* placeholder-gray-600 used in contact form */
+html.light .placeholder-gray-600::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+
+html.light table {
+  color: var(--text-primary);
+}
+html.light thead tr {
+  background-color: rgba(0,0,0,0.03) !important;
+}
+html.light tbody tr:hover {
+  background-color: rgba(0,0,0,0.02) !important;
+}
+
+/* ── Modals ──────────────────────────────────────────────────────────────── */
+
+html.light .fixed.inset-0 > div[class*="bg-\[#0f1729\]"],
+html.light .fixed.inset-0 > div[class*="bg-\[#0a0f1e\]"] {
+  background-color: var(--bg-card) !important;
+}
+
+/* ── Problem cards carousel (ProblemCardsSection) ────────────────────────── */
+
+html.light .backdrop-blur-xl.border-2 {
+  background-color: var(--bg-card) !important;
+}
+
+/* carousel nav buttons */
+html.light .bg-white\/10.backdrop-blur-md,
+html.light .hover\:bg-white\/20:hover {
+  background-color: var(--bg-card-dark) !important;
+}
+
+/* ── ContactSection form panel ───────────────────────────────────────────── */
+html.light form.backdrop-blur-md {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* contact info items */
+html.light .bg-white\/5.border {
+  background-color: var(--bg-card-dark) !important;
+}
+
+/* ── Footer inner links ───────────────────────────────────────────────────── */
+html.light footer .text-slate-400 {
+  color: var(--text-secondary) !important;
+}
+html.light footer .border-white\/10 {
+  border-color: var(--border-color) !important;
+}
+
+/* ── "Know More" button on HowItWorks (bg-white text-black) keeps its style */
+/* No override needed — white button on light mode is fine */
+
+/* ── Gradient text clips — keep them as-is on light mode ─────────────────── */
+/* bg-clip-text text-transparent keeps the cyan/purple gradients readable */
+
+/* ── HowItWorks blurred orbs — hide on light mode (would look odd) ───────── */
+html.light .blur-\[100px\] {
+  opacity: 0.15 !important;
+}
+
+/* ── Smooth transition when toggling ─────────────────────────────────────── */
+html,
+html * {
+  transition: background-color 0.2s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Don't animate transforms/opacity (breaks framer-motion) */
+html *[class*="animate-"],
+html *[class*="transition-"] {
+  transition-property: background-color, color, border-color;
+}

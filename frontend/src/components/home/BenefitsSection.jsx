@@ -46,7 +46,7 @@ const benefits = [
 
 const BenefitsSection = () => {
   return (
-    <section className="w-full py-24 text-white overflow-hidden relative bg-black">
+    <section className="w-full py-24 text-white overflow-hidden relative bg-black transition-colors duration-200">
       {/* Background decoration */}
       <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-cyan-500/50 to-transparent"></div>
 
@@ -57,10 +57,10 @@ const BenefitsSection = () => {
           viewport={{ once: false }}
           className="text-center mb-20"
         >
-          <h2 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-linear-to-r from-white to-gray-400 mb-6">
+          <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-linear-to-r from-white to-slate-300 mb-6">
             Benefits for Citizens
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
              Experience a modern, transparent, and efficient way to resolving civic issues.
           </p>
         </motion.div>
@@ -80,20 +80,20 @@ const BenefitsSection = () => {
                 }}
                 className="group relative h-full"
               >
-                <div className="h-full p-8 rounded-3xl bg-gray-900/50 border border-white/10 hover:border-cyan-500/50 hover:bg-gray-900 transition-all duration-500 flex flex-col items-center text-center gap-6 shadow-xl hover:shadow-cyan-500/10">
+                <div className="h-full p-8 rounded-3xl bg-slate-900/70 border border-white/15 hover:border-cyan-500/60 hover:bg-slate-900/90 transition-all duration-500 flex flex-col items-center text-center gap-6 shadow-xl hover:shadow-cyan-500/15">
                    {/* Icon Container with Glow */}
-                   <div className="relative p-4 rounded-2xl bg-gray-800/50 ring-1 ring-white/10 group-hover:ring-cyan-500/50 transition-all duration-500 group-hover:scale-110">
+                   <div className="relative p-5 rounded-2xl bg-slate-800/70 ring-1 ring-white/15 group-hover:ring-cyan-500/60 transition-all duration-500 group-hover:scale-110">
                       <div className="absolute inset-0 bg-cyan-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"/>
                       <div className="relative z-10">
                         {item.icon}
                       </div>
                    </div>
-                   
+
                    <div>
                      <h3 className="text-xl font-bold text-white mb-3 group-hover:text-cyan-400 transition-colors">
                        {item.title}
                      </h3>
-                     <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                     <p className="text-base text-slate-300 leading-relaxed group-hover:text-white transition-colors">
                        {item.description}
                      </p>
                    </div>

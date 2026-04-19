@@ -1,27 +1,88 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShieldAlert, LogOut, User } from "lucide-react";
 import StaggeredMenu from "./background/StaggeredMenu";
 import { Button } from "./ui/Button";
 import { useAuth } from "../context/AuthContext";
+import { useSiteSettings } from "../context/SiteSettingsContext";
+import NotificationBell from "./NotificationBell";
 
 export const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { settings } = useSiteSettings();
+  const siteName = settings?.site_name || "SmartCivic";
 
-  const links = [
-    { label: "Home", link: "/" },
-    { label: "About", link: "/about" },
-    { label: "Dashboard", link: "/dashboard" },
-    { label: "Report Issue", link: "/report" },
-    { label: "Contact", link: "/contact" },
-  ];
+  // CMS custom pages — fetched once, added to public nav links
+  const [cmsPages, setCmsPages] = useState([]);
+  useEffect(() => {
+    fetch("/api/cms/pages/")
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        // Only custom pages (not built-in slots) that are public
+        const custom = (Array.isArray(data) ? data : [])
+          .filter(p => p.slot === "custom" && p.is_public);
+        setCmsPages(custom);
+      })
+      .catch(() => {});
+  }, []);
+
+  const cmsLinks = cmsPages.map(p => ({
+    label: p.name,
+    link: `/pages/${p.slug}`,
+  }));
+
+  // Role-specific nav links
+  const getLinks = () => {
+    if (!user) {
+      return [
+        { label: "Home",    link: "/" },
+        { label: "About",   link: "/about" },
+        { label: "SLA",     link: "/sla" },
+        ...cmsLinks,
+        { label: "Contact", link: "/contact" },
+      ];
+    }
+    switch (user.role) {
+      case "citizen":
+        return [
+          { label: "Home",         link: "/" },
+          { label: "About",        link: "/about" },
+          { label: "SLA",          link: "/sla" },
+          ...cmsLinks,
+          { label: "Dashboard",    link: "/dashboard" },
+          { label: "Report Issue", link: "/report" },
+          { label: "Contact",      link: "/contact" },
+        ];
+      case "authority":
+        return [
+          { label: "Dashboard", link: "/authority" },
+          { label: "Queue", link: "/authority/queue" },
+          { label: "My Issues", link: "/authority/my-issues" },
+        ];
+      case "ngo_csr":
+        return [
+          { label: "Dashboard", link: "/ngo" },
+          { label: "Escalated Issues", link: "/ngo/escalated" },
+        ];
+      case "org_admin":
+      case "super_admin":
+        return [
+          { label: "Admin Panel", link: "/admin" },
+        ];
+      default:
+        return [{ label: "Home", link: "/" }];
+    }
+  };
+
+  const links = getLinks();
 
   const handleLogout = async () => {
     await logout();
-    navigate("/");
+    // Replace history so the previous role's URL can't be navigated back to
+    navigate("/login", { replace: true, state: null });
   };
 
  
@@ -48,7 +109,7 @@ export const Navbar = () => {
           <Link to="/" className="flex items-center gap-2">
             <ShieldAlert className="w-7 h-7 text-cyan-400" />
             <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-cyan-400 to-purple-500">
-              SmartCivic
+              {siteName}
             </span>
           </Link>
 
@@ -79,13 +140,13 @@ export const Navbar = () => {
             {user ? (
               /* ── Logged-in user display ── */
               <div className="flex items-center gap-3">
-                {/* Avatar + name */}
-                <div className="flex items-center gap-2.5">
+                {/* Avatar + name — clickable → profile */}
+                <Link to="/profile" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
                   {user.profile_image ? (
                     <img
                       src={user.profile_image}
                       alt={user.full_name}
-                      className="w-10 h-10 rounded-full object-cover border border-cyan-400"
+                      className="w-9 h-9 rounded-full object-cover border border-cyan-400"
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-linear-to-br from-cyan-500 to-purple-600 flex items-center justify-center border border-cyan-400/30">
@@ -100,7 +161,10 @@ export const Navbar = () => {
                       {user.role.replace("_", " ")}
                     </p>
                   </div>
-                </div>
+                </Link>
+
+                {/* Notifications */}
+                <NotificationBell accentColor="cyan" />
 
                 {/* Admin Panel link for super_admin */}
                 {(user.role === "super_admin" || user.is_staff) && (

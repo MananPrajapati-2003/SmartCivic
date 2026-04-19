@@ -6,9 +6,9 @@ import axios from "axios";
  */
 const api = axios.create({
   baseURL: "/api",
-  headers: {
-    "Content-Type": "application/json",
-  },
+  // Do NOT set a default Content-Type — let the browser set it automatically.
+  // For FormData (file uploads) it must be multipart/form-data with the correct
+  // boundary; setting application/json here breaks those requests.
 });
 
 // ─── Request Interceptor ──────────────────────────────────────────────────────

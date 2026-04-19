@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutDashboard, CheckSquare, ClipboardList, LogOut, Shield, Bell } from "lucide-react";
+import { LayoutDashboard, CheckSquare, ClipboardList, LogOut, Shield, User } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useSiteSettings } from "../../context/SiteSettingsContext";
 import api from "../../api/axiosInstance";
+import NotificationBell from "../../components/NotificationBell";
 
 const NAV = [
   { to: "/authority", icon: <LayoutDashboard size={18} />, label: "Dashboard", end: true },
@@ -13,6 +15,7 @@ const NAV = [
 
 export default function AuthorityLayout() {
   const { user, logout } = useAuth();
+  const { settings } = useSiteSettings();
   const navigate = useNavigate();
   const [queueCount, setQueueCount] = useState(0);
 
@@ -20,7 +23,7 @@ export default function AuthorityLayout() {
     api.get("/issues/queue/?page_size=1").then(r => setQueueCount(r.data.total || 0)).catch(() => {});
   }, []);
 
-  const handleLogout = async () => { await logout(); navigate("/login"); };
+  const handleLogout = async () => { await logout(); navigate("/login", { replace: true, state: null }); };
 
   return (
     <div className="flex h-screen bg-[#070b14] text-white overflow-hidden">
@@ -33,7 +36,7 @@ export default function AuthorityLayout() {
               <Shield size={16} className="text-white" />
             </div>
             <div>
-              <p className="text-white font-bold text-sm leading-tight">SmartCivic</p>
+              <p className="text-white font-bold text-sm leading-tight">{settings?.site_name || "SmartCivic"}</p>
               <p className="text-blue-400 text-xs">Authority Panel</p>
             </div>
           </div>
@@ -42,13 +45,18 @@ export default function AuthorityLayout() {
         {/* User Info */}
         <div className="p-4 border-b border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-sm font-bold shrink-0">
-              {user?.full_name?.[0]?.toUpperCase()}
-            </div>
-            <div className="min-w-0">
+            <button onClick={() => navigate("/profile")}
+              className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-sm font-bold shrink-0 hover:ring-2 hover:ring-blue-400/50 transition-all overflow-hidden">
+              {user?.profile_image
+                ? <img src={user.profile_image} alt="" className="w-full h-full object-cover" />
+                : (user?.full_name?.[0]?.toUpperCase() || <User size={14} />)
+              }
+            </button>
+            <div className="min-w-0 flex-1">
               <p className="text-white text-sm font-medium truncate">{user?.full_name}</p>
               <p className="text-slate-500 text-xs">Authority</p>
             </div>
+            <NotificationBell accentColor="indigo" />
           </div>
         </div>
 

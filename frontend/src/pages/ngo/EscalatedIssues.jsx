@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Flame, CheckCircle, XCircle, Upload, RefreshCcw, Loader2, X, Heart } from "lucide-react";
+import { MapPin, Flame, CheckCircle, Upload, RefreshCcw, Loader2, X, Heart, Edit3 } from "lucide-react";
 import api from "../../api/axiosInstance";
+import { useAuth } from "../../context/AuthContext";
 
 const SEVERITY_COLOR = {
   low: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
@@ -9,6 +10,50 @@ const SEVERITY_COLOR = {
   high: "text-orange-400 bg-orange-500/10 border-orange-500/30",
   critical: "text-red-400 bg-red-500/10 border-red-500/30",
 };
+
+function ProgressModal({ issue, currentNote, onClose, onDone }) {
+  const [note, setNote] = useState(currentNote || "");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    if (!note.trim()) return;
+    setLoading(true);
+    try {
+      await api.patch(`/issues/${issue.id}/ngo-assist/`, { note });
+      onDone("Progress note updated!");
+    } catch (e) { setError(e?.response?.data?.detail || "Failed."); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+        className="bg-[#0f1729] border border-white/15 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold">Update Progress</h3>
+          <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={16} /></button>
+        </div>
+        <p className="text-slate-400 text-sm mb-3 font-medium">{issue.title}</p>
+        <div>
+          <label className="text-xs text-slate-400 mb-1 block">Progress note (visible to citizens & admin)</label>
+          <textarea value={note} onChange={e => setNote(e.target.value)} rows={4}
+            placeholder="Describe current progress, actions taken, or next steps…"
+            className="w-full bg-black/40 border border-white/12 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none resize-none placeholder-slate-600" />
+        </div>
+        {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
+        <div className="flex gap-3 mt-4">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/15 text-slate-400 text-sm hover:text-white transition-colors">Cancel</button>
+          <button onClick={submit} disabled={loading || !note.trim()}
+            className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors disabled:opacity-50">
+            {loading ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Save Update"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
 
 function AssistModal({ issue, onClose, onDone }) {
   const [action, setAction] = useState("accept");
@@ -102,9 +147,11 @@ function AssistModal({ issue, onClose, onDone }) {
 }
 
 export default function EscalatedIssues() {
+  const { user } = useAuth();
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
+  const [progressModal, setProgressModal] = useState(null);
   const [toast, setToast] = useState("");
 
   const load = useCallback(async () => {
@@ -145,7 +192,7 @@ export default function EscalatedIssues() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {issues.map((issue, i) => {
-            const myAssist = issue.ngo_assistances?.find(a => a.accepted);
+            const myAssist = issue.ngo_assistances?.find(a => a.accepted && a.ngo_name === user?.full_name);
             return (
               <motion.div key={issue.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
                 className="bg-white/3 border border-white/8 rounded-2xl p-4 hover:border-white/15 transition-colors">
@@ -161,9 +208,15 @@ export default function EscalatedIssues() {
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-orange-400 font-medium bg-orange-500/10 border border-orange-500/20 px-2.5 py-0.5 rounded-lg">Escalated</span>
                   {myAssist ? (
-                    <span className="text-xs text-emerald-400 flex items-center gap-1">{/* already assisted */}
-                      <CheckCircle size={12} /> Assisting
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-emerald-400 flex items-center gap-1">
+                        <CheckCircle size={12} /> Assisting
+                      </span>
+                      <button onClick={() => setProgressModal({ issue, note: myAssist.note })}
+                        className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/35 border border-indigo-500/25 font-medium transition-colors">
+                        <Edit3 size={11} /> Update
+                      </button>
+                    </div>
                   ) : (
                     <button onClick={() => setModal(issue)}
                       className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/35 border border-emerald-500/25 font-medium transition-colors">
@@ -187,6 +240,16 @@ export default function EscalatedIssues() {
       </AnimatePresence>
       <AnimatePresence>
         {modal && <AssistModal issue={modal} onClose={() => setModal(null)} onDone={onDone} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {progressModal && (
+          <ProgressModal
+            issue={progressModal.issue}
+            currentNote={progressModal.note}
+            onClose={() => setProgressModal(null)}
+            onDone={(msg) => { setProgressModal(null); setToast(msg); setTimeout(() => setToast(""), 3000); load(); }}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

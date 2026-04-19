@@ -7,7 +7,7 @@ import ContactSection from "../components/home/ContactSection";
 
 const HomePage = () => {
   return (
-    <div className="w-full min-h-screen bg-black text-white">
+    <div className="w-full min-h-screen bg-black text-white transition-colors duration-200">
       <HeroSection />
       <BenefitsSection />
       <HowItWorksSection />
