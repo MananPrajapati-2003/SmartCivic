@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 import secrets
 from datetime import timedelta
 from .managers import UserManager
+from .site_settings import SiteSettings, UserPermission
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -26,11 +27,34 @@ class User(AbstractBaseUser, PermissionsMixin):
         (ROLE_SUPER_ADMIN, "Super Admin"),
     ]
 
+    DEPT_ROADS = "roads"
+    DEPT_WATER = "water"
+    DEPT_ELECTRICITY = "electricity"
+    DEPT_SANITATION = "sanitation"
+    DEPT_SAFETY = "safety"
+    DEPT_ENVIRONMENT = "environment"
+    DEPT_GENERAL = "general"
+
+    DEPT_CHOICES = [
+        (DEPT_ROADS, "Roads & Infrastructure"),
+        (DEPT_WATER, "Water Supply"),
+        (DEPT_ELECTRICITY, "Electricity"),
+        (DEPT_SANITATION, "Sanitation & Waste"),
+        (DEPT_SAFETY, "Public Safety"),
+        (DEPT_ENVIRONMENT, "Environment"),
+        (DEPT_GENERAL, "General"),
+    ]
+
     # ── Core fields ──────────────────────────────────────────────────────────
     email = models.EmailField(unique=True, db_index=True)
     full_name = models.CharField(max_length=150)
     mobile_number = models.CharField(max_length=10, blank=True, default="")
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_CITIZEN, db_index=True)
+    department = models.CharField(
+        max_length=30, choices=DEPT_CHOICES, default=DEPT_GENERAL,
+        blank=True, db_index=True,
+        help_text="Only relevant for authority users — determines which issue categories they see"
+    )
     profile_image = models.ImageField(upload_to="profiles/", blank=True, null=True)
 
     # ── Verification flags ────────────────────────────────────────────────────

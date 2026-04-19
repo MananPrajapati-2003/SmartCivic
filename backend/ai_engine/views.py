@@ -1,13 +1,105 @@
 """
 AI Engine API views.
 
-AIStatusView   — GET /api/ai/status/<issue_id>/  (React polling endpoint)
-AIStatsView    — GET /api/ai/stats/              (Admin dashboard metrics)
+AIPreviewView  — POST /api/ai/preview/           (form-time AI analysis, returns category/urgency)
+AIStatusView   — GET  /api/ai/status/<issue_id>/ (React polling endpoint after submission)
+AIStatsView    — GET  /api/ai/stats/             (Admin dashboard metrics)
 """
+import tempfile
+import os
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
 from accounts.models import User
+
+
+# ── Map HF category names → our DB IssueCategory names ──────────────────────
+HF_TO_DB_CATEGORY = {
+    "Road_Issues_Pothole":            "Roads & Potholes",
+    "Road_Issues_Damaged_Sign":       "Roads & Potholes",
+    "Infrastructure_Damage_Concrete": "Road & Infrastructure",
+    "Domestic_trash":                 "Sanitation & Garbage",
+    "Vandalism_Graffiti":             "Environment & Trees",
+    "Parking_Issues_Illegal_Parking": "Roads & Potholes",
+    # pass-through for names that already match DB
+}
+
+
+class AIPreviewView(APIView):
+    """
+    POST /api/ai/preview/
+    Called by the form wizard after the user fills title, description, and attaches a photo.
+    Runs the HuggingFace model synchronously and returns the predicted category,
+    urgency, and confidence so the form can display them as read-only AI results.
+
+    multipart/form-data:
+        text  — "{title}. {description}"
+        image — first uploaded image file (optional but strongly recommended)
+
+    Response:
+        {
+            "category":    "Roads & Potholes",
+            "hf_category": "Road_Issues_Pothole",
+            "urgency":     "high",
+            "confidence":  0.91,
+            "summary":     "AI identified Road_Issues_Pothole with 91% confidence."
+        }
+    """
+    permission_classes = [IsAuthenticated]
+    parser_classes     = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        from ai_engine.tasks import _call_hf_space
+        from issues.models import IssueCategory
+
+        text  = request.data.get("text", "").strip()
+        image = request.FILES.get("image")
+
+        if not text:
+            return Response({"detail": "text is required."}, status=400)
+
+        # The HF model (ResNet50) requires an image — text-only calls return null
+        # so the frontend placeholder stays visible until the user adds a photo.
+        if not image:
+            return Response({"needs_image": True}, status=200)
+
+        # Write image to a temp file so _call_hf_space can read it via path
+        tmp_path = None
+        try:
+            suffix = os.path.splitext(image.name)[1] or ".jpg"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                for chunk in image.chunks():
+                    tmp.write(chunk)
+                tmp_path = tmp.name
+
+            result = _call_hf_space(text, tmp_path)
+
+            hf_cat  = result.get("category", "")
+            db_name = HF_TO_DB_CATEGORY.get(hf_cat, hf_cat)
+
+            # Resolve to DB category id so the frontend can pass category_id on submit
+            cat_obj = IssueCategory.objects.filter(name__iexact=db_name, is_active=True).first()
+            # Fallback: partial match
+            if not cat_obj:
+                cat_obj = IssueCategory.objects.filter(name__icontains=db_name.split("&")[0].strip(), is_active=True).first()
+
+            return Response({
+                "category":    cat_obj.name if cat_obj else db_name,
+                "category_id": cat_obj.id   if cat_obj else None,
+                "hf_category": hf_cat,
+                "urgency":     result.get("urgency",    "medium"),
+                "confidence":  result.get("confidence", 0.0),
+                "summary":     result.get("summary",    ""),
+            })
+
+        except Exception as exc:
+            return Response({"detail": f"AI preview failed: {exc}"}, status=502)
+
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
 
 
 class AIStatusView(APIView):

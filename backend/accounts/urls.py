@@ -2,6 +2,8 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 from . import views
 from . import admin_views
+from . import settings_views
+from . import notifications_views
 
 urlpatterns = [
     # ── Public: Registration & Login ──────────────────────────────────────────
@@ -24,6 +26,8 @@ urlpatterns = [
     path("me/", views.MeView.as_view(), name="auth-me"),
     path("logout/", views.LogoutView.as_view(), name="auth-logout"),
     path("change-password/", views.ChangePasswordView.as_view(), name="auth-change-password"),
+    path("notifications/", notifications_views.NotificationsView.as_view(), name="notifications"),
+    path("contact/", views.ContactView.as_view(), name="contact"),
 
     # ── JWT Token Refresh ─────────────────────────────────────────────────────
     path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
@@ -43,4 +47,11 @@ urlpatterns = [
 
     # ── Admin: Authority users list (for issue assignment) ────────────────────
     path("admin/authority-users/", admin_views.AdminAuthorityUsersView.as_view(), name="admin-authority-users"),
+
+    # ── Site Settings & User Rights ───────────────────────────────────────────
+    path("public-settings/", settings_views.PublicSiteSettingsView.as_view(), name="public-settings"),
+    path("settings/", settings_views.SiteSettingsView.as_view(), name="site-settings"),
+    path("rights/<int:pk>/", settings_views.UserPermissionsView.as_view(), name="user-rights"),
+    path("user-search/", settings_views.UserSearchView.as_view(), name="user-search"),
+    path("admin/users/<int:pk>/department/", settings_views.AuthorityDeptUpdateView.as_view(), name="user-dept"),
 ]

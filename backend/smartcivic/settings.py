@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "accounts",
     "issues",
     "ai_engine",
+    "cms",
 ]
 
 MIDDLEWARE = [

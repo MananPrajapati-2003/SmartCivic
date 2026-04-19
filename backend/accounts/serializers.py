@@ -5,7 +5,7 @@ import re
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Read-only serializer — returned in all auth responses."""
+    """Serializer — returned in all auth responses. Writable fields: full_name, mobile_number, profile_image."""
 
     profile_image_url = serializers.SerializerMethodField()
 
@@ -16,13 +16,14 @@ class UserSerializer(serializers.ModelSerializer):
             "civic_score", "profile_image", "profile_image_url",
             "is_email_verified", "is_mobile_verified", "date_joined", "is_staff",
         ]
-        read_only_fields = fields
+        read_only_fields = [
+            "id", "email", "role", "civic_score", "profile_image_url",
+            "is_email_verified", "is_mobile_verified", "date_joined", "is_staff",
+        ]
 
     def get_profile_image_url(self, obj):
-        request = self.context.get("request")
         if obj.profile_image:
-            url = obj.profile_image.url
-            return request.build_absolute_uri(url) if request else url
+            return obj.profile_image.url
         return None
 
 
@@ -254,6 +255,7 @@ class AdminCreateUserSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=150)
     email = serializers.EmailField()
     mobile_number = serializers.CharField(max_length=10, required=False, allow_blank=True)
+    department = serializers.CharField(max_length=30, required=False, allow_blank=True, default="general")
 
     def validate_email(self, value):
         if User.objects.filter(email__iexact=value).exists():

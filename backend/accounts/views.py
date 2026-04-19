@@ -20,7 +20,7 @@ from .serializers import (
 from .email_service import (
     send_welcome_and_email_otp, send_email_otp,
     send_mobile_otp_email, send_password_reset_email,
-    send_ngo_pending_email,
+    send_ngo_pending_email, send_contact_message, send_contact_confirmation,
 )
 
 
@@ -386,6 +386,40 @@ class LogoutView(APIView):
             return Response({"message": "Logout successful."})
         except TokenError:
             return Response({"detail": "Invalid or expired token."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ContactView(APIView):
+    """
+    POST /api/auth/contact/
+    Public endpoint — receives contact form submissions and emails them to support.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        first_name = request.data.get("first_name", "").strip()
+        last_name  = request.data.get("last_name", "").strip()
+        email      = request.data.get("email", "").strip()
+        message    = request.data.get("message", "").strip()
+
+        errors = {}
+        if not first_name:
+            errors["first_name"] = "First name is required."
+        if not email or "@" not in email:
+            errors["email"] = "A valid email address is required."
+        if not message or len(message) < 10:
+            errors["message"] = "Please write at least 10 characters."
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+        from .site_settings import SiteSettings
+        support_email = SiteSettings.get().support_email
+
+        # Send to support inbox
+        send_contact_message(first_name, last_name, email, message, support_email)
+        # Send confirmation to the sender
+        send_contact_confirmation(first_name, email)
+
+        return Response({"message": "Your message has been sent! We'll get back to you soon."})
 
 
 class ChangePasswordView(APIView):

@@ -145,6 +145,21 @@ class AuthorityQueueView(APIView):
             status=CivicIssue.STATUS_PENDING_VERIFICATION
         ).select_related("category", "reported_by").prefetch_related("images")
 
+        # Filter by authority department if not "general"
+        dept = request.user.department
+        DEPT_CATEGORY_MAP = {
+            "roads": ["Roads & Potholes", "Road_Issues_Pothole", "Road_Issues_Damaged_Sign",
+                       "Infrastructure_Damage_Concrete", "Parking_Issues_Illegal_Parking", "Road & Infrastructure"],
+            "water": ["Water Supply"],
+            "electricity": ["Electricity"],
+            "sanitation": ["Sanitation & Garbage", "Sanitation & Waste", "Domestic_trash"],
+            "safety": ["Public Safety & Lighting", "Public Safety"],
+            "environment": ["Environment & Trees", "Animal Welfare", "Community & Social",
+                            "Vandalism_Graffiti", "Environment"],
+        }
+        if dept and dept != "general" and dept in DEPT_CATEGORY_MAP:
+            qs = qs.filter(category__name__in=DEPT_CATEGORY_MAP[dept])
+
         # Filters
         severity = request.query_params.get("severity")
         search = request.query_params.get("search")
@@ -339,6 +354,7 @@ class AuthorityMyIssuesView(APIView):
         ).exclude(
             status__in=[CivicIssue.STATUS_CLOSED, CivicIssue.STATUS_REJECTED, CivicIssue.STATUS_FAKE]
         ).select_related("category", "reported_by", "assignment").prefetch_related("images")
+
         status_filter = request.query_params.get("status")
         if status_filter:
             qs = qs.filter(status=status_filter)
@@ -406,6 +422,23 @@ class NGOAssistView(APIView):
 
         log_action(request.user, f"ngo_{action}d", "CivicIssue", pk)
         return Response({"message": f"Assistance {action}ed.", "accepted": assistance.accepted})
+
+    def patch(self, request, pk):
+        """PATCH /api/issues/<id>/ngo-assist/ — update progress note on accepted assistance"""
+        if not is_ngo(request.user):
+            return Response({"detail": "Only NGO/CSR users can update assistance."}, status=403)
+        try:
+            assistance = NGOAssistance.objects.get(issue_id=pk, ngo_user=request.user, accepted=True)
+        except NGOAssistance.DoesNotExist:
+            return Response({"detail": "No accepted assistance found for this issue."}, status=404)
+
+        note = request.data.get("note", "").strip()
+        if note:
+            assistance.note = note
+            assistance.save(update_fields=["note", "updated_at"])
+
+        log_action(request.user, "ngo_progress_update", "CivicIssue", pk)
+        return Response({"message": "Progress updated.", "note": assistance.note})
 
 
 # ─── Citizen Feedback ─────────────────────────────────────────────────────────

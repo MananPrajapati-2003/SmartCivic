@@ -118,6 +118,7 @@ class IssueListSerializer(serializers.ModelSerializer):
     is_overdue = serializers.SerializerMethodField()
     assigned_note = serializers.SerializerMethodField()
     assigned_at = serializers.SerializerMethodField()
+    ngo_assistances = NGOAssistanceSerializer(many=True, read_only=True)
 
     class Meta:
         model = CivicIssue
@@ -129,6 +130,7 @@ class IssueListSerializer(serializers.ModelSerializer):
             "ai_routing", "ai_urgency", "ai_predicted_category", "ai_sla_hours",
             "assigned_to_name", "sla_deadline", "sla_hours_assigned",
             "is_overdue", "assigned_note", "assigned_at",
+            "ngo_assistances",
             "created_at", "updated_at"
         ]
 

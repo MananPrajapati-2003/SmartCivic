@@ -1,0 +1,6 @@
+@echo off
+echo Running migrations...
+d:\smart_civic_project\SmartCivic\backend\venv\Scripts\python.exe d:\smart_civic_project\SmartCivic\backend\manage.py migrate
+echo.
+echo Starting Django server...
+d:\smart_civic_project\SmartCivic\backend\venv\Scripts\python.exe d:\smart_civic_project\SmartCivic\backend\manage.py runserver 0.0.0.0:8000

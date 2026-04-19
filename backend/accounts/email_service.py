@@ -35,6 +35,15 @@ def _base_wrapper(body_html):
 
 
 def _send(subject, text_body, html_body, to_email):
+    # Check global email notifications toggle
+    try:
+        from .site_settings import SiteSettings
+        if not SiteSettings.get().email_notifications_enabled:
+            print("[EMAIL] Skipped (notifications disabled globally): " + subject)
+            return False
+    except Exception:
+        pass  # If settings table doesn't exist yet, allow email
+
     print("[EMAIL] Attempting to send '" + subject + "' to " + to_email)
     try:
         msg = EmailMultiAlternatives(
@@ -188,6 +197,55 @@ def send_ngo_rejected_email(user, org_name, reason):
         "<p style='color:#94a3b8;font-size:13px;'>If you believe this is an error, please contact our support team.</p>"
     )
     return _send(subject, text_body, html_body, user.email)
+
+
+def send_contact_message(first_name, last_name, sender_email, message, support_email):
+    """Send a contact-form submission to the platform support inbox."""
+    subject = f"SmartCivic Contact: Message from {first_name} {last_name}"
+    text_body = (
+        f"Contact form submission\n\n"
+        f"Name: {first_name} {last_name}\n"
+        f"Email: {sender_email}\n\n"
+        f"Message:\n{message}"
+    )
+    html_body = (
+        "<h2 style='color:#22d3ee;margin-top:0;'>New Contact Message</h2>"
+        "<p style='color:#94a3b8;font-size:13px;margin-bottom:24px;'>Received via the SmartCivic contact form</p>"
+        "<div style='background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:20px;margin-bottom:20px;'>"
+        "<table style='width:100%;border-collapse:collapse;'>"
+        f"<tr><td style='color:#64748b;font-size:13px;padding:6px 0;width:100px;'>Name</td>"
+        f"<td style='color:#fff;font-weight:600;font-size:14px;'>{first_name} {last_name}</td></tr>"
+        f"<tr><td style='color:#64748b;font-size:13px;padding:6px 0;'>Email</td>"
+        f"<td style='color:#22d3ee;font-size:14px;'><a href='mailto:{sender_email}' style='color:#22d3ee;'>{sender_email}</a></td></tr>"
+        "</table></div>"
+        "<div style='background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:20px;'>"
+        "<p style='color:#64748b;font-size:13px;margin:0 0 10px;'>Message</p>"
+        f"<p style='color:#e2e8f0;font-size:14px;line-height:1.7;margin:0;white-space:pre-wrap;'>{message}</p>"
+        "</div>"
+        f"<p style='color:#475569;font-size:12px;margin-top:20px;'>Reply directly to <a href='mailto:{sender_email}' style='color:#22d3ee;'>{sender_email}</a> to respond.</p>"
+    )
+    return _send(subject, text_body, html_body, support_email)
+
+
+def send_contact_confirmation(first_name, sender_email):
+    """Send a confirmation email to the person who submitted the contact form."""
+    subject = "SmartCivic — We received your message!"
+    text_body = (
+        f"Hi {first_name},\n\n"
+        "Thank you for reaching out to SmartCivic. We've received your message and will get back to you shortly.\n\n"
+        "— The SmartCivic Team"
+    )
+    html_body = (
+        f"<h2 style='color:#fff;margin-top:0;'>Thanks for reaching out, {first_name}!</h2>"
+        "<p style='color:#cbd5e1;line-height:1.7;'>We've received your message and our team will review it shortly.</p>"
+        "<div style='background:#0f2a1a;border:1px solid #166534;border-radius:12px;padding:20px;margin:24px 0;'>"
+        "<p style='color:#4ade80;font-weight:700;margin:0 0 6px;'>What happens next?</p>"
+        "<p style='color:#86efac;font-size:13px;margin:0;'>Our support team typically responds within 1–2 business days.</p>"
+        "</div>"
+        "<p style='color:#94a3b8;font-size:13px;'>If your query is urgent, you can also email us directly at "
+        "<a href='mailto:smart.civicissue@gmail.com' style='color:#22d3ee;'>smart.civicissue@gmail.com</a>.</p>"
+    )
+    return _send(subject, text_body, html_body, sender_email)
 
 
 def send_credentials_email(user, password, role_label):

@@ -171,7 +171,8 @@ class AdminUserListView(APIView):
                 "is_mobile_verified": u.is_mobile_verified,
                 "civic_score": u.civic_score,
                 "date_joined": u.date_joined.strftime("%d %b %Y, %H:%M"),
-                "profile_image": request.build_absolute_uri(u.profile_image.url) if u.profile_image else None,
+                "profile_image": u.profile_image.url if u.profile_image else None,
+                "department": u.department if u.role == User.ROLE_AUTHORITY else None,
             }
             # Attach NGO info if applicable
             if hasattr(u, "ngo_profile"):
@@ -360,6 +361,7 @@ class AdminCreateAuthorityView(APIView):
             mobile_number=serializer.validated_data.get("mobile_number", ""),
             password=temp_password,
             role=User.ROLE_AUTHORITY,
+            department=serializer.validated_data.get("department", "general"),
             is_active=True,
             is_email_verified=True,   # Admin has verified identity
         )
@@ -407,7 +409,7 @@ class AdminAuthorityUsersView(APIView):
             return Response({"detail": "Forbidden."}, status=403)
         users = (
             User.objects.filter(role=User.ROLE_AUTHORITY, is_active=True)
-            .values("id", "full_name", "email")
+            .values("id", "full_name", "email", "department")
             .order_by("full_name")
         )
         return Response(list(users))
