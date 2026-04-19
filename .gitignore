@@ -1,0 +1,82 @@
+# =============================================================================
+# SmartCivic Monorepo — Root .gitignore
+# Covers: Django backend + React/Vite frontend + OS junk
+# =============================================================================
+
+
+# ── Python / Django ───────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env_dir/
+
+# Django
+*.sqlite3
+backend/media/
+backend/staticfiles/
+backend/static/
+*.log
+
+# Migrations (keep __init__.py, ignore nothing — migrations are source code)
+# (intentionally not ignored)
+
+# ── Node / React / Vite ───────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+
+# Vite build cache & pre-bundled deps (NEVER commit these)
+frontend/.vite/
+.vite/
+
+# Production build output
+frontend/dist/
+frontend/dist-ssr/
+dist/
+dist-ssr/
+
+# Vite/CRA local env files
+*.local
+
+# ── Credentials & Secrets ─────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+secrets.json
+credentials.json
+service_account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+google-credentials*.json
+firebase*.json
+.aws/
+
+# ── Editor & IDE ──────────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── OS Junk ───────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+IMPLEMENTATION_PLAN.md
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

@@ -1,26 +1,5 @@
-venv/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.env
-.env.*
-!.env.example
-*.sqlite3
-media/
-staticfiles/
-.DS_Store
-*.log
+# All ignore rules are managed in the root /.gitignore
+# This file is kept so Python tooling that expects a local .gitignore
+# still finds one, but rules live at the monorepo root.
 
-# Credentials & secrets
-secrets.json
-credentials.json
-service_account*.json
-*.pem
-*.key
-*.p12
-*.pfx
-google-credentials*.json
-firebase*.json
-aws-credentials
-.aws/
+# Backend-specific additions (if any arise) go here:

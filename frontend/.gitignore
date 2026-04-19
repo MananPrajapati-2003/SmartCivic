@@ -1,24 +1,5 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# All ignore rules are managed in the root /.gitignore
+# This file is kept so tools (ESLint, editors) that scan for a local
+# .gitignore still find one, but rules live at the monorepo root.
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Frontend-specific additions (if any arise) go here:
